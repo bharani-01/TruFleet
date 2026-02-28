@@ -1,7 +1,6 @@
 /**
  * TruFleet — Mailer Service
- * Uses Nodemailer + Mailtrap SMTP for all outbound email.
- * Swap MAILTRAP_* env vars for production SMTP credentials.
+ * Uses Nodemailer + Brevo (Sendinblue) SMTP relay for all outbound email.
  */
 
 'use strict';
@@ -11,11 +10,12 @@ const nodemailer = require('nodemailer');
 
 /* ── Transport ─────────────────────────────────────────── */
 const transport = nodemailer.createTransport({
-  host: process.env.MAILTRAP_HOST || 'sandbox.smtp.mailtrap.io',
-  port: parseInt(process.env.MAILTRAP_PORT || '2525', 10),
+  host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+  port: parseInt(process.env.SMTP_PORT || '587', 10),
+  secure: false, // STARTTLS on port 587
   auth: {
-    user: process.env.MAILTRAP_USER || '47e7c0632269b2',
-    pass: process.env.MAILTRAP_PASS || '048c92c1e96395',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
   },
 });
 
