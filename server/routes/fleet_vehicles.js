@@ -19,6 +19,7 @@
  *   color          TEXT,
  *   fuel_type      TEXT,
  *   engine_cc      TEXT,
+ *   engine_number  TEXT,
  *   status         TEXT        NOT NULL DEFAULT 'active',
  *   notes          TEXT,
  *   created_at     TIMESTAMPTZ DEFAULT NOW()
@@ -95,7 +96,7 @@ router.post('/', async (req, res) => {
     const {
       vehicle_number, vin, owner_name, contact,
       vehicle_type, vehicle_usage, make, model,
-      year, color, fuel_type, engine_cc, status, notes
+      year, color, fuel_type, engine_cc, engine_number, status, notes
     } = req.body;
 
     // Required fields
@@ -118,6 +119,7 @@ router.post('/', async (req, res) => {
       color:          (color|| '').trim() || null,
       fuel_type:      (fuel_type  || '').trim() || null,
       engine_cc:      (engine_cc  || '').trim() || null,
+      engine_number:  (engine_number || '').trim().toUpperCase() || null,
       status:         status || 'active',
       notes:          (notes || '').trim() || null,
     };

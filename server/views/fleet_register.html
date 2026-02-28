@@ -526,6 +526,72 @@
 
         @keyframes spin { to { transform: rotate(360deg); } }
 
+        /* ─── Reg-Number Builder ──────────────────────────────────── */
+        .reg-builder {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .reg-builder select,
+        .reg-builder input {
+            padding: 0.62rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.82rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background: var(--surface-alt);
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            width: 100%;
+        }
+
+        .reg-builder select:focus,
+        .reg-builder input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(30,64,175,.1);
+            background: white;
+        }
+
+        .reg-builder input.mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .reg-preview {
+            margin-top: 8px;
+            padding: 10px 14px;
+            background: #EFF6FF;
+            border: 1.5px dashed #93C5FD;
+            border-radius: var(--radius);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #94A3B8;
+            letter-spacing: 3px;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .reg-preview.ready {
+            background: #EFF6FF;
+            border-style: solid;
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .reg-hint {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         /* ─── Responsive ────────────────────────────────────────── */
         @media (max-width: 1100px) {
             .main-grid { grid-template-columns: 1fr; }
@@ -622,15 +688,31 @@
                     <!-- Identity -->
                     <div class="section-divider"><span>Identity</span></div>
                     <div style="display:grid;gap:1rem;">
-                        <div class="form-row">
-                            <div class="field">
-                                <label>Registration No.<span class="required-star">*</span></label>
-                                <input id="f-reg" type="text" class="mono" placeholder="MH12AB1234" autocomplete="off" required>
+
+                        <!-- Registration Number Builder -->
+                        <div class="field">
+                            <label>Registration Number<span class="required-star">*</span></label>
+                            <div class="reg-builder">
+                                <select id="f-state" onchange="populateDistricts()">
+                                    <option value="">— State —</option>
+                                </select>
+                                <select id="f-district" onchange="buildRegNumber()" disabled>
+                                    <option value="">— District / RTO —</option>
+                                </select>
+                                <input id="f-series" type="text" class="mono" placeholder="AB" maxlength="2"
+                                       oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,''); buildRegNumber();">
+                                <input id="f-regnum" type="number" placeholder="1234" min="1" max="9999"
+                                       oninput="buildRegNumber()">
                             </div>
-                            <div class="field">
-                                <label>VIN<span class="required-star">*</span></label>
-                                <input id="f-vin" type="text" class="mono" placeholder="1HGBH41JXMN109186" autocomplete="off" required>
-                            </div>
+                            <div class="reg-preview" id="regPreview">— — — — —</div>
+                            <div class="reg-hint"><i class="ri-information-line"></i> Format: STATE · RTO-CODE · SERIES · NUMBER &nbsp;(e.g. MH 12 AB 1234)</div>
+                            <!-- Hidden field that holds the final assembled value -->
+                            <input id="f-reg" type="hidden">
+                        </div>
+
+                        <div class="field">
+                            <label>VIN<span class="required-star">*</span></label>
+                            <input id="f-vin" type="text" class="mono" placeholder="1HGBH41JXMN109186" autocomplete="off" required>
                         </div>
 
                         <!-- Usage Toggle -->
@@ -722,8 +804,21 @@
                                 </select>
                             </div>
                             <div class="field">
-                                <label>Engine / CC</label>
+                                <label>Engine Displacement / CC</label>
                                 <input id="f-engine" type="text" placeholder="3800cc / 280HP">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Engine Number<span class="required-star" title="Required">*</span></label>
+                                <input id="f-engine-no" type="text" class="mono" placeholder="ABC1234567" autocomplete="off" required
+                                       oninput="this.value=this.value.toUpperCase();">
+                            </div>
+                            <div class="field">
+                                <label>&nbsp;</label>
+                                <div style="padding:0.62rem 0.9rem;background:var(--surface-alt);border:1px dashed var(--border);border-radius:var(--radius);font-size:0.75rem;color:var(--text-muted);">
+                                    <i class="ri-information-line"></i> Engine number found on the engine block / RC book.
+                                </div>
                             </div>
                         </div>
                         <div class="field">
@@ -769,19 +864,19 @@
                         <tr>
                             <th>Reg. No.</th>
                             <th>VIN</th>
+                            <th>Engine No.</th>
                             <th>Owner</th>
                             <th>Contact</th>
                             <th>Type</th>
                             <th>Usage</th>
                             <th>Make / Model</th>
-                            <th>Fuel</th>
                             <th>Status</th>
                             <th style="text-align:center;">Actions</th>
                         </tr>
                     </thead>
                     <tbody id="vehicleTableBody">
                         <tr class="loading-row">
-                            <td colspan="10">
+                            <td colspan="11">
                                 <span class="spinner"></span> Loading vehicles…
                             </td>
                         </tr>
@@ -808,6 +903,103 @@
 const API = '/api/fleet-vehicles';
 
 let allVehicles = [];
+
+/* ════════════════════════════════════════════════════
+   INDIA STATES + RTO DATA
+   Format: { 'CODE': { name, rtos: [['code','name'],...] } }
+════════════════════════════════════════════════════ */
+const STATES = {
+  'AN':{ name:'Andaman & Nicobar', rtos:[['01','Port Blair']] },
+  'AP':{ name:'Andhra Pradesh', rtos:[['01','Srikakulam'],['03','Visakhapatnam'],['04','East Godavari'],['05','West Godavari'],['06','Krishna (Vijayawada)'],['07','Guntur'],['09','Nellore'],['10','Chittoor'],['11','Kadapa'],['12','Anantapur'],['13','Kurnool']] },
+  'AR':{ name:'Arunachal Pradesh', rtos:[['01','Itanagar'],['02','Naharlagun']] },
+  'AS':{ name:'Assam', rtos:[['01','Guwahati'],['02','Nagaon'],['03','Silchar'],['04','Tinsukia'],['05','Dibrugarh'],['06','Jorhat'],['07','Barpeta']] },
+  'BR':{ name:'Bihar', rtos:[['01','Patna'],['02','Gaya'],['03','Bhagalpur'],['04','Muzaffarpur'],['05','Darbhanga'],['06','Purnia'],['07','Munger']] },
+  'CG':{ name:'Chhattisgarh', rtos:[['01','Raipur'],['02','Durg'],['03','Bilaspur'],['04','Jagdalpur']] },
+  'CH':{ name:'Chandigarh', rtos:[['01','Chandigarh']] },
+  'DL':{ name:'Delhi', rtos:[['01','Sadar'],['02','Seelampur'],['03','Janakpuri'],['04','Saket'],['05','Rohini'],['07','Loni'],['08','Dwarka'],['10','Mehrauli'],['11','Mayur Vihar'],['12','Noida'],['13','Model Town']] },
+  'DN':{ name:'Dadra & Nagar Haveli', rtos:[['01','Silvassa']] },
+  'DD':{ name:'Daman & Diu', rtos:[['01','Daman'],['02','Diu']] },
+  'GA':{ name:'Goa', rtos:[['01','Panaji (North Goa)'],['02','Margao (South Goa)']] },
+  'GJ':{ name:'Gujarat', rtos:[['01','Ahmedabad'],['02','Vadodara'],['03','Rajkot'],['04','Surat'],['05','Bhavnagar'],['06','Jamnagar'],['07','Junagadh'],['08','Mehsana'],['09','Gandhinagar'],['10','Anand'],['11','Kutch (Bhuj)'],['12','Navsari'],['13','Vapi'],['14','Bharuch'],['15','Ankleshwar']] },
+  'HP':{ name:'Himachal Pradesh', rtos:[['01','Shimla'],['02','Mandi'],['03','Kangra (Dharamshala)'],['04','Solan'],['05','Hamirpur'],['06','Bilaspur'],['07','Kullu'],['08','Chamba'],['09','Sirmaur (Nahan)'],['10','Kinnaur'],['11','Lahaul & Spiti'],['12','Una']] },
+  'HR':{ name:'Haryana', rtos:[['01','Ambala'],['02','Karnal'],['03','Rohtak'],['04','Hisar'],['05','Faridabad'],['06','Gurgaon'],['07','Panipat'],['08','Sonipat'],['09','Bhiwani'],['10','Sirsa'],['11','Mahendragarh'],['12','Jhajjar'],['13','Rewari'],['14','Palwal'],['15','Mewat (Nuh)'],['16','Kaithal'],['17','Kurukshetra'],['18','Yamunanagar'],['19','Panchkula'],['20','Fatehabad']] },
+  'JH':{ name:'Jharkhand', rtos:[['01','Ranchi'],['02','Dhanbad'],['03','Jamshedpur'],['04','Bokaro'],['05','Hazaribagh'],['06','Deoghar'],['07','Dumka'],['08','Giridih'],['09','Palamu'],['10','Chaibasa']] },
+  'JK':{ name:'Jammu & Kashmir', rtos:[['01','Jammu'],['02','Srinagar'],['03','Anantnag'],['04','Baramulla'],['05','Kathua'],['06','Udhampur'],['07','Poonch']] },
+  'KA':{ name:'Karnataka', rtos:[['01','Bangalore Central'],['02','Bangalore East'],['03','Bangalore West'],['04','Bangalore South'],['05','Tumkur'],['06','Mysore'],['07','Mandya'],['08','Hassan'],['09','Mangalore'],['10','Udupi'],['11','Shimoga'],['12','Chikkamagalur'],['13','Chitradurga'],['14','Davanagere'],['15','Bellary'],['16','Bijapur'],['17','Belgaum'],['18','Dharwad'],['19','Haveri'],['21','Uttara Kannada'],['22','Kodagu'],['24','Ramanagara'],['25','Chikkaballapur'],['26','Koppal'],['27','Yadgir'],['28','Raichur'],['29','Bidar'],['30','Bagalkot'],['31','Gadag'],['32','Kolar'],['33','Chamarajanagar'],['34','Vijayapura'],['35','Bengaluru Rural']] },
+  'KL':{ name:'Kerala', rtos:[['01','Thiruvananthapuram'],['02','Kollam'],['03','Pathanamthitta'],['04','Alappuzha'],['05','Kottayam'],['06','Idukki'],['07','Ernakulam'],['08','Thrissur'],['09','Palakkad'],['10','Malappuram'],['11','Kozhikode'],['12','Wayanad'],['13','Kannur'],['14','Kasaragod']] },
+  'LA':{ name:'Ladakh', rtos:[['01','Leh'],['02','Kargil']] },
+  'LD':{ name:'Lakshadweep', rtos:[['01','Kavaratti']] },
+  'MH':{ name:'Maharashtra', rtos:[['01','Mumbai Central'],['02','Mumbai West'],['03','Mumbai East'],['04','Thane'],['05','Kalyan'],['06','Raigad (Alibag)'],['07','Pune'],['08','Satara'],['09','Solapur'],['10','Kolhapur'],['11','Sangli'],['12','Nashik'],['13','Dhule'],['14','Jalgaon'],['15','Aurangabad'],['16','Beed'],['17','Latur'],['18','Osmanabad'],['19','Nanded'],['20','Parbhani'],['21','Hingoli'],['22','Jalna'],['23','Amravati'],['24','Yavatmal'],['25','Akola'],['26','Washim'],['27','Buldhana'],['28','Nagpur'],['29','Bhandara'],['30','Chandrapur'],['31','Gadchiroli'],['32','Gondia'],['33','Wardha'],['34','Ratnagiri'],['35','Sindhudurg'],['36','Nandurbar'],['38','Pune Rural'],['39','Navi Mumbai'],['40','Nashik Rural'],['41','Palghar'],['43','Mira Bhayandar'],['46','Vasai'],['47','Bhiwandi'],['48','Ulhasnagar'],['49','Ambarnath'] ] },
+  'ML':{ name:'Meghalaya', rtos:[['01','Shillong'],['02','Tura'],['03','Jowai'],['04','Baghmara']] },
+  'MN':{ name:'Manipur', rtos:[['01','Imphal East'],['02','Imphal West'],['03','Thoubal'],['04','Bishnupur']] },
+  'MP':{ name:'Madhya Pradesh', rtos:[['01','Bhopal'],['02','Indore'],['03','Gwalior'],['04','Jabalpur'],['05','Rewa'],['06','Sagar'],['07','Ujjain'],['08','Satna'],['09','Ratlam'],['10','Chhindwara'],['11','Morena'],['12','Bhind'],['13','Dewas'],['14','Mandsaur'],['15','Neemuch'],['16','Vidisha'],['17','Raisen'],['18','Sehore'],['19','Hoshangabad'],['20','Harda'],['29','Mandla'],['34','Shivpuri'],['35','Datia'],['36','Ashok Nagar'],['37','Guna'],['40','Rajgarh'],['41','Shajapur'],['43','Khargone'],['44','Barwani'],['45','Dhar'],['46','Alirajpur'],['47','Jhabua'],['48','Burhanpur'],['49','Khandwa']] },
+  'MZ':{ name:'Mizoram', rtos:[['01','Aizawl'],['02','Lunglei'],['03','Champhai']] },
+  'NL':{ name:'Nagaland', rtos:[['01','Kohima'],['02','Dimapur'],['03','Mokokchung'],['04','Tuensang']] },
+  'OD':{ name:'Odisha', rtos:[['01','Cuttack'],['02','Bhubaneswar'],['03','Sambalpur'],['04','Berhampur'],['05','Rourkela'],['06','Puri'],['07','Balasore'],['08','Angul'],['09','Bolangir'],['10','Koraput'],['11','Dhenkanal'],['12','Kendujhar'],['13','Sundargarh'],['14','Mayurbhanj']] },
+  'PB':{ name:'Punjab', rtos:[['01','Ludhiana'],['02','Amritsar'],['03','Jalandhar'],['04','Patiala'],['05','Bathinda'],['06','Mohali (SAS Nagar)'],['07','Hoshiarpur'],['08','Gurdaspur'],['09','Pathankot'],['10','Ferozepur'],['11','Sangrur'],['12','Fatehgarh Sahib'],['13','Rupnagar'],['14','Mansa'],['15','Moga'],['16','Muktsar'],['17','Barnala'],['18','Fazilka'],['19','Tarn Taran'],['20','Kapurthala']] },
+  'PY':{ name:'Puducherry', rtos:[['01','Puducherry'],['02','Karaikal'],['03','Mahe'],['04','Yanam']] },
+  'RJ':{ name:'Rajasthan', rtos:[['01','Jaipur'],['02','Jodhpur'],['03','Kota'],['04','Ajmer'],['05','Bikaner'],['06','Udaipur'],['07','Bharatpur'],['08','Alwar'],['09','Sikar'],['10','Chittorgarh'],['11','Pali'],['12','Nagaur'],['13','Tonk'],['14','Sawai Madhopur'],['15','Jhunjhunu'],['16','Jhalawar'],['17','Baran'],['18','Bundi'],['19','Sirohi'],['20','Jalore'],['21','Barmer'],['22','Jaisalmer'],['23','Hanumangarh'],['24','Sri Ganganagar'],['25','Churu'],['26','Dausa'],['27','Karauli'],['28','Dholpur']] },
+  'SK':{ name:'Sikkim', rtos:[['01','Gangtok'],['02','Namchi'],['03','Mangan'],['04','Gyalshing']] },
+  'TN':{ name:'Tamil Nadu', rtos:[['01','Chennai Central'],['02','Chennai North'],['03','Chennai South'],['04','Chennai West'],['05','Chennai East'],['06','Tambaram'],['07','Kancheepuram'],['08','Thiruvallur'],['09','Vellore'],['10','Tiruvannamalai'],['11','Villupuram'],['12','Cuddalore'],['13','Salem'],['14','Dharmapuri'],['15','Krishnagiri'],['16','Erode'],['17','Tiruppur'],['18','Coimbatore'],['19','Nilgiris (Ooty)'],['20','Madurai'],['21','Theni'],['22','Virudhunagar'],['23','Dindigul'],['24','Ramanathapuram'],['25','Sivagangai'],['26','Tirunelveli'],['27','Thoothukudi'],['28','Kanyakumari'],['29','Tanjore'],['30','Tiruvarur'],['31','Nagapattinam'],['32','Pudukkottai'],['33','Tiruchirappalli'],['34','Karur'],['35','Perambalur'],['36','Ariyalur'],['37','Namakkal'],['38','Tirupathur']] },
+  'TR':{ name:'Tripura', rtos:[['01','Agartala'],['02','Dharmanagar'],['03','Belonia'],['04','Kailasahar']] },
+  'TS':{ name:'Telangana', rtos:[['01','Hyderabad West'],['02','Hyderabad East'],['03','Hyderabad North'],['04','Ranga Reddy'],['05','Medak'],['06','Karimnagar'],['07','Nizamabad'],['08','Adilabad'],['09','Khammam'],['10','Warangal'],['11','Nalgonda'],['12','Mahbubnagar'],['13','Sangareddy'],['14','Siddipet'],['15','Jagtial'],['16','Peddapalli'],['17','Rajanna Sircilla'],['18','Mancherial'],['19','Nirmal'],['20','Kumuram Bheem']] },
+  'UK':{ name:'Uttarakhand', rtos:[['01','Dehradun'],['02','Haridwar'],['03','Rishikesh'],['04','Nainital'],['05','Haldwani'],['06','Roorkee'],['07','Kashipur'],['08','Rudrapur'],['09','Pithoragarh'],['10','Almora'],['11','Chamoli'],['12','Champawat'],['13','Bageshwar'],['14','Pauri Garhwal'],['15','Tehri Garhwal'],['16','Uttarkashi'],['17','Rudraprayag']] },
+  'UP':{ name:'Uttar Pradesh', rtos:[['11','Agra'],['12','Mathura'],['13','Aligarh'],['14','Firozabad'],['16','Mainpuri'],['17','Farrukhabad'],['19','Etawah'],['21','Jhansi'],['22','Jalaun'],['23','Hamirpur'],['24','Mahoba'],['25','Banda'],['30','Ghaziabad'],['31','G.B.Nagar (Noida)'],['32','Bulandshahr'],['34','Meerut'],['36','Muzaffarnagar'],['38','Saharanpur'],['41','Moradabad'],['43','Badaun'],['44','Bareilly'],['45','Pilibhit'],['46','Shahjahanpur'],['50','Lucknow'],['51','Unnao'],['52','Hardoi'],['53','Sitapur'],['55','Barabanki'],['56','Rae Bareli'],['57','Amethi'],['60','Gorakhpur'],['61','Maharajganj'],['62','Deoria'],['63','Kushinagar'],['64','Siddharthnagar'],['65','Basti'],['67','Gonda'],['68','Balrampur'],['70','Faizabad (Ayodhya)'],['72','Sultanpur'],['74','Ballia'],['75','Mau'],['76','Azamgarh'],['77','Jaunpur'],['78','Ghazipur'],['79','Chandauli'],['80','Varanasi'],['82','Mirzapur'],['83','Sonbhadra'],['84','Prayagraj'],['85','Kaushambi'],['86','Fatehpur'],['87','Pratapgarh'],['90','Kanpur City'],['91','Kanpur Dehat']] },
+  'WB':{ name:'West Bengal', rtos:[['01','Kolkata South'],['02','Kolkata North'],['03','Kolkata West'],['04','Howrah'],['05','Hooghly'],['06','North 24 Parganas'],['07','South 24 Parganas'],['08','Nadia'],['09','Murshidabad'],['10','Birbhum'],['11','Burdwan'],['12','Bankura'],['13','Purulia'],['14','Midnapore West'],['15','Midnapore East'],['17','Malda'],['18','Dinajpur North'],['19','Dinajpur South'],['20','Jalpaiguri'],['21','Darjeeling'],['22','Kalimpong'],['23','Alipurduar'],['24','Cooch Behar']] }
+};
+
+/* ── Populate state dropdown on load ── */
+function initStatePicker() {
+    const sel = document.getElementById('f-state');
+    Object.keys(STATES).sort().forEach(code => {
+        const opt = document.createElement('option');
+        opt.value = code;
+        opt.textContent = `${code} — ${STATES[code].name}`;
+        sel.appendChild(opt);
+    });
+}
+
+function populateDistricts() {
+    const stateCode = document.getElementById('f-state').value;
+    const distSel   = document.getElementById('f-district');
+    distSel.innerHTML = '<option value="">— District / RTO —</option>';
+    distSel.disabled  = !stateCode;
+
+    if (stateCode && STATES[stateCode]) {
+        STATES[stateCode].rtos.forEach(([code, name]) => {
+            const opt = document.createElement('option');
+            opt.value = code;
+            opt.textContent = `${code} — ${name}`;
+            distSel.appendChild(opt);
+        });
+    }
+    buildRegNumber();
+}
+
+function buildRegNumber() {
+    const state   = document.getElementById('f-state').value    || '';
+    const dist    = document.getElementById('f-district').value || '';
+    const series  = document.getElementById('f-series').value   || '';
+    const num     = document.getElementById('f-regnum').value   || '';
+
+    const preview  = document.getElementById('regPreview');
+    const hiddenReg = document.getElementById('f-reg');
+
+    const numPadded = num ? String(num).padStart(4, '0') : '';
+    const parts = [state, dist, series.toUpperCase(), numPadded].filter(Boolean);
+    const isComplete = state && dist && series.length === 2 && num;
+
+    if (isComplete) {
+        const assembled = `${state}${dist}${series.toUpperCase()}${numPadded}`;
+        preview.textContent = `${state} ${dist} ${series.toUpperCase()} ${numPadded}`;
+        preview.className = 'reg-preview ready';
+        hiddenReg.value   = assembled;
+    } else {
+        preview.textContent = parts.join(' ') + (parts.length ? ' …' : '— — — — —');
+        preview.className = 'reg-preview';
+        hiddenReg.value = '';
+    }
+}
 
 /* ── Toast ── */
 function toast(msg, type = 'info', duration = 3500) {
@@ -859,7 +1051,7 @@ function renderTable(data) {
     const count = document.getElementById('tableCount');
 
     if (!data.length) {
-        tbody.innerHTML = `<tr><td colspan="10">
+        tbody.innerHTML = `<tr><td colspan="11">
             <div class="empty-state">
                 <i class="ri-car-line"></i>
                 <p>No vehicles found. Register the first one!</p>
@@ -875,12 +1067,12 @@ function renderTable(data) {
         <tr data-id="${v.id}">
             <td><span class="cell-reg">${v.vehicle_number}</span></td>
             <td><span class="cell-vin">${v.vin || '—'}</span></td>
+            <td><span class="cell-vin">${v.engine_number || '—'}</span></td>
             <td style="font-weight:500;">${escHtml(v.owner_name)}</td>
             <td>${escHtml(v.contact)}</td>
             <td>${escHtml(v.vehicle_type)}</td>
             <td><span class="badge ${v.vehicle_usage}">${v.vehicle_usage}</span></td>
             <td>${v.make ? `<span style="font-weight:500;">${escHtml(v.make)}</span>${v.model ? ' / ' + escHtml(v.model) : ''}${v.year ? ' <small style="color:var(--text-muted);">('+v.year+')</small>' : ''}` : '—'}</td>
-            <td>${v.fuel_type || '—'}</td>
             <td><span class="badge ${v.status}">${v.status}</span></td>
             <td style="text-align:center;white-space:nowrap;">
                 <button class="btn-icon delete" title="Delete" onclick="deleteVehicle('${v.id}', '${v.vehicle_number}')">
@@ -928,9 +1120,19 @@ async function submitForm() {
 
     const usage = document.querySelector('input[name="usage"]:checked')?.value || 'commercial';
 
+    // Validate assembled reg number
+    const regVal = document.getElementById('f-reg').value;
+    if (!regVal) {
+        toast('Please complete the Registration Number (State → District → Series → Number).', 'error');
+        btn.disabled = false;
+        txt.textContent = orig;
+        return;
+    }
+
     const payload = {
-        vehicle_number: document.getElementById('f-reg').value.trim(),
+        vehicle_number: regVal,
         vin:            document.getElementById('f-vin').value.trim(),
+        engine_number:  document.getElementById('f-engine-no').value.trim() || undefined,
         owner_name:     document.getElementById('f-owner').value.trim(),
         contact:        document.getElementById('f-contact').value.trim(),
         vehicle_type:   document.getElementById('f-type').value,
@@ -958,6 +1160,12 @@ async function submitForm() {
         } else {
             toast(`✓ Vehicle <strong>${json.data.vehicle_number}</strong> registered successfully!`, 'success');
             document.getElementById('regForm').reset();
+            // Reset reg-number builder state
+            document.getElementById('f-district').innerHTML = '<option value="">— District / RTO —</option>';
+            document.getElementById('f-district').disabled = true;
+            document.getElementById('regPreview').textContent = '— — — — —';
+            document.getElementById('regPreview').className  = 'reg-preview';
+            document.getElementById('f-reg').value = '';
             // Reset usage toggle back to commercial
             document.getElementById('u-commercial').checked = true;
             await loadVehicles();
@@ -1001,6 +1209,7 @@ function escHtml(str) {
 }
 
 /* ── Init ── */
+initStatePicker();
 loadVehicles();
 </script>
 </body>
