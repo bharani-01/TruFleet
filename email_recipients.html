@@ -12,6 +12,7 @@
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
     <script src="auth-check.js"></script>
+    <script src="rbac.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         :root {
@@ -457,6 +458,7 @@
             // In production, could call a dedicated /api/email-recipients/run-alerts endpoint
         }
 
+        TruFleetRBAC.init('email_recipients');
         loadRecipients();
     </script>
 </body>

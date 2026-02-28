@@ -13,6 +13,7 @@
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
     <script src="auth-check.js"></script>
+    <script src="rbac.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
     <style>
@@ -545,6 +546,8 @@
 
     /* Enter key support */
     document.addEventListener('DOMContentLoaded', () => {
+        TruFleetRBAC.init('dispatch');
+
         ['regInput','keyInput'].forEach(id => {
             document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') requestAuth(); });
         });

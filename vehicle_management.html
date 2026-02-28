@@ -20,6 +20,7 @@
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
     <script src="auth-check.js"></script>
+    <script src="rbac.js"></script>
 
     <!-- GSAP Animation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -952,6 +953,8 @@
                 y: 16, duration: 0.4, stagger: 0.04, ease: 'power2.out'
             });
         }
+
+        TruFleetRBAC.init('vehicle_management');
 
         // Initial render
         (async () => await renderList())();

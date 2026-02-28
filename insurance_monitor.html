@@ -20,6 +20,7 @@
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
     <script src="auth-check.js"></script>
+    <script src="rbac.js"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -626,6 +627,7 @@
             buildTimeline(vehicleCache);
         }
 
+        TruFleetRBAC.init('insurance_monitor');
         loadInsurance();
 
         /* ── Expiry Timeline Chart ── */

@@ -20,6 +20,7 @@
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
     <script src="auth-check.js"></script>
+    <script src="rbac.js"></script>
 
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -821,6 +822,7 @@
             renderFeed();
         }
 
+        TruFleetRBAC.init('audits');
         loadLogs();
 
         /* ── Search ── */

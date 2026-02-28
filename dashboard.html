@@ -20,6 +20,7 @@
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
     <script src="auth-check.js"></script>
+    <script src="rbac.js"></script>
 
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -724,6 +725,8 @@
 
         /* ── Boot ── */
         (async function init() {
+
+        TruFleetRBAC.init('dashboard');
 
         /* User */
         const user = TruFleet.getCurrentUser();

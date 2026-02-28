@@ -21,6 +21,7 @@ const dispatchRouter        = require('./routes/dispatch');
 const ownersRouter          = require('./routes/owners');
 const insuranceRouter       = require('./routes/insurance');
 const identityRouter        = require('./routes/identity');
+const rolesRouter           = require('./routes/roles');
 
 const { startScheduler } = require('./services/scheduler');
 
@@ -64,6 +65,7 @@ app.use('/api/dispatch',          dispatchRouter);
 app.use('/api/owners',            ownersRouter);
 app.use('/api/insurance',         insuranceRouter);
 app.use('/api/identity',          identityRouter);
+app.use('/api/roles',             rolesRouter);
 
 /* ── Health check ── */
 app.get('/api/health', (_req, res) => {
