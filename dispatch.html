@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Dispatch Control</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="trufleet-theme.js"></script>
+    <script src="trufleet-api.js"></script>
+    <script src="trufleet-notif.js"></script>
+    <script src="auth-check.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-body: #F1F5F9;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0F172A;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-on-dark: #F8FAFC;
+            --accent-blue: #3B82F6;
+            --accent-success: #10B981;
+            --accent-warning: #F59E0B;
+            --accent-danger: #EF4444;
+            --accent-purple: #8B5CF6;
+            --sidebar-w: 72px;
+            --sidebar-expanded: 260px;
+            --header-h: 70px;
+            --shadow-card: 0 4px 6px -1px rgba(0,0,0,.05), 0 2px 4px -1px rgba(0,0,0,.03);
+            --shadow-float: 0 20px 25px -5px rgba(0,0,0,.06), 0 10px 10px -5px rgba(0,0,0,.02);
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--bg-body); color:var(--text-primary); height:100vh; display:flex; overflow:hidden; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            left: 0; top: 0;
+            display: flex; flex-direction: column;
+            transition: width .3s var(--ease);
+            z-index: 200;
+            overflow: hidden;
+        }
+        .sidebar:hover { width: var(--sidebar-expanded); }
+        .brand-icon {
+            padding: 1.25rem 0;
+            display: flex; align-items: center; justify-content: center;
+            gap: 0.75rem;
+            font-size: 1.4rem; color: var(--accent-blue);
+            min-height: var(--header-h);
+            overflow: hidden;
+        }
+        .brand-text { font-family:'Manrope',sans-serif; font-weight:800; font-size:1rem; color:white; white-space:nowrap; opacity:0; transition:opacity .2s var(--ease) .05s; }
+        .sidebar:hover .brand-text { opacity:1; }
+        .nav-menu { display:flex; flex-direction:column; flex:1; padding:0.5rem 0; gap:2px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.875rem 1.35rem;
+            color: #94A3B8;
+            font-size: 0.875rem; font-weight: 500;
+            text-decoration: none;
+            border-radius: 0;
+            transition: all .2s var(--ease);
+            white-space: nowrap;
+            position: relative;
+        }
+        .nav-item:hover { background: rgba(255,255,255,.07); color: white; }
+        .nav-item.active { background: rgba(59,130,246,.15); color: var(--accent-blue); border-right: 3px solid var(--accent-blue); }
+        .nav-item i { font-size: 1.25rem; flex-shrink: 0; }
+        .nav-label { opacity:0; transition:opacity .15s var(--ease); white-space:nowrap; }
+        .sidebar:hover .nav-label { opacity:1; }
+
+        /* ── Main ── */
+        .main-wrapper {
+            margin-left: var(--sidebar-w);
+            flex: 1;
+            display: flex; flex-direction: column;
+            overflow-y: auto;
+            transition: margin-left .3s var(--ease);
+        }
+        header {
+            height: var(--header-h);
+            background: var(--bg-surface);
+            border-bottom: 1px solid #E2E8F0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-title h1 { font-family:'Manrope',sans-serif; font-size:1.25rem; font-weight:700; }
+        .header-title span { color:var(--text-secondary); font-size:.9rem; font-weight:400; }
+        .header-right { display:flex; align-items:center; gap:1.5rem; }
+        .avatar { width:36px; height:36px; border-radius:50%; background:var(--bg-sidebar); color:white; display:flex; align-items:center; justify-content:center; font-size:.9rem; font-weight:600; }
+
+        .page-content { padding:2rem; max-width:1400px; margin:0 auto; width:100%; }
+
+        /* ── Stats bar ── */
+        .stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:1.5rem; margin-bottom:2rem; }
+        .stat-card {
+            background:var(--bg-surface); border-radius:12px; padding:1.5rem;
+            border:1px solid #E2E8F0; box-shadow:var(--shadow-card);
+            display:flex; align-items:center; gap:1.25rem;
+        }
+        .stat-icon { width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0; }
+        .stat-val { font-family:'Manrope',sans-serif; font-size:2rem; font-weight:800; line-height:1; }
+        .stat-label { font-size:.8rem; color:var(--text-secondary); margin-top:.25rem; }
+
+        /* ── Main grid ── */
+        .dispatch-grid { display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-bottom:2rem; }
+
+        /* ── Auth Form ── */
+        .card { background:var(--bg-surface); border-radius:16px; padding:2rem; border:1px solid #E2E8F0; box-shadow:var(--shadow-card); }
+        .card-title { font-family:'Manrope',sans-serif; font-size:1.1rem; font-weight:700; margin-bottom:1.5rem; display:flex; align-items:center; gap:.75rem; }
+        .card-title i { color:var(--accent-blue); }
+
+        .form-group { margin-bottom:1.25rem; }
+        .form-label { font-size:.85rem; font-weight:600; color:var(--text-primary); margin-bottom:.5rem; display:block; }
+        .form-input {
+            width:100%; padding:.75rem 1rem; border:1.5px solid #E2E8F0;
+            border-radius:8px; font-family:'Inter',sans-serif; font-size:.95rem;
+            transition:all .2s; background:white; color:var(--text-primary);
+        }
+        .form-input:focus { outline:none; border-color:var(--accent-blue); box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+        .form-input.mono { font-family:'JetBrains Mono',monospace; letter-spacing:.05em; }
+
+        .btn-authorize {
+            width:100%; padding:1rem; background:var(--bg-sidebar); color:white;
+            border:none; border-radius:10px; font-family:'Manrope',sans-serif;
+            font-size:1rem; font-weight:700; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; gap:.75rem;
+            transition:all .25s var(--ease);
+        }
+        .btn-authorize:hover { background:#1e293b; transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,23,42,.2); }
+        .btn-authorize:active { transform:translateY(0); }
+        .btn-authorize:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
+        /* ── Check steps ── */
+        .checks-list { display:flex; flex-direction:column; gap:.75rem; margin-top:1.5rem; }
+        .check-item {
+            display:flex; align-items:center; gap:1rem;
+            padding:.75rem 1rem; border-radius:8px;
+            background:#F8FAFC; border:1px solid #E2E8F0;
+            font-size:.9rem; font-weight:500;
+            transition:all .3s var(--ease);
+        }
+        .check-item.pass { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+        .check-item.fail { background:#FEF2F2; border-color:#FECACA; color:#991B1B; }
+        .check-item.pending { background:#F0F9FF; border-color:#BAE6FD; color:#0369A1; }
+        .check-dot { width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0; }
+        .check-item.idle .check-dot { background:#E2E8F0; color:#94A3B8; }
+        .check-item.pass .check-dot { background:#10B981; color:white; }
+        .check-item.fail .check-dot { background:#EF4444; color:white; }
+        .check-item.pending .check-dot { background:#3B82F6; color:white; animation:pulse-dot 1s infinite; }
+        @keyframes pulse-dot { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+
+        /* ── Result card ── */
+        .result-card {
+            margin-top:1.5rem; border-radius:12px; padding:1.5rem;
+            display:none; animation:resultIn .4s var(--ease);
+        }
+        @keyframes resultIn { from{opacity:0;transform:scale(.96) translateY(8px)} to{opacity:1;transform:none} }
+        .result-card.authorized { background:#ECFDF5; border:2px solid #10B981; }
+        .result-card.denied { background:#FEF2F2; border:2px solid #EF4444; }
+        .result-heading { font-family:'Manrope',sans-serif; font-size:1.5rem; font-weight:800; display:flex; align-items:center; gap:.75rem; }
+        .result-card.authorized .result-heading { color:#065F46; }
+        .result-card.denied .result-heading { color:#991B1B; }
+        .result-meta { margin-top:1rem; display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+        .result-meta-item { font-size:.85rem; }
+        .result-meta-label { color:var(--text-secondary); margin-bottom:.15rem; }
+        .result-meta-val { font-weight:600; font-family:'JetBrains Mono',monospace; }
+        .result-actions { display:flex; gap:.75rem; margin-top:1.25rem; }
+        .btn-sm { padding:.5rem 1rem; border-radius:6px; font-size:.85rem; font-weight:600; cursor:pointer; border:none; transition:all .2s; }
+        .btn-reset { background:#F1F5F9; color:var(--text-primary); }
+        .btn-reset:hover { background:#E2E8F0; }
+
+        /* ── Live log ── */
+        .log-table-wrap { overflow-x:auto; margin-top:1rem; max-height:420px; overflow-y:auto; }
+        table { width:100%; border-collapse:collapse; font-size:.875rem; }
+        th { background:#F8FAFC; padding:.75rem 1rem; text-align:left; font-size:.75rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary); position:sticky; top:0; }
+        td { padding:.75rem 1rem; border-bottom:1px solid #F1F5F9; }
+        tr:hover td { background:#FAFBFC; }
+        .status-pill {
+            display:inline-flex; align-items:center; gap:.3rem;
+            padding:.25rem .75rem; border-radius:20px; font-size:.75rem; font-weight:600;
+        }
+        .pill-auth { background:#ECFDF5; color:#065F46; }
+        .pill-deny { background:#FEF2F2; color:#991B1B; }
+        .reg-mono { font-family:'JetBrains Mono',monospace; font-size:.85rem; }
+        .empty-state { text-align:center; padding:3rem; color:var(--text-secondary); }
+        .empty-state i { font-size:2rem; margin-bottom:.75rem; display:block; }
+
+        /* ── Live dot ── */
+        .live-badge {
+            display:inline-flex; align-items:center; gap:.4rem;
+            background:#ECFDF5; color:#065F46; padding:.25rem .75rem;
+            border-radius:20px; font-size:.75rem; font-weight:600;
+        }
+        .live-dot { width:6px; height:6px; border-radius:50%; background:#10B981; animation:live-pulse 2s infinite; }
+        @keyframes live-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+        /* shake on deny */
+        @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+        .shake { animation:shake .4s ease; }
+
+        @media(max-width:1100px) { .dispatch-grid{grid-template-columns:1fr;} .stats-row{grid-template-columns:1fr 1fr;} }
+        @media(max-width:640px) { .stats-row{grid-template-columns:1fr;} .result-meta{grid-template-columns:1fr;} }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<nav class="sidebar">
+    <div class="brand-icon">
+        <i class="ri-truck-fill"></i>
+        <span class="brand-text">TRUFLEET</span>
+    </div>
+    <div class="nav-menu">
+        <a href="dashboard.html" class="nav-item"><i class="ri-dashboard-3-line"></i><span class="nav-label">Overview</span></a>
+        <a href="vehicle_management.html" class="nav-item"><i class="ri-bus-line"></i><span class="nav-label">Vehicle Management</span></a>
+        <a href="insurance_monitor.html" class="nav-item"><i class="ri-shield-check-line"></i><span class="nav-label">Insurance Monitor</span></a>
+        <a href="dispatch.html" class="nav-item active"><i class="ri-traffic-light-line"></i><span class="nav-label">Dispatch Control</span></a>
+        <a href="owner.html" class="nav-item"><i class="ri-truck-line"></i><span class="nav-label">Owner Portal</span></a>
+        <a href="email_recipients.html" class="nav-item"><i class="ri-mail-settings-line"></i><span class="nav-label">Email Recipients</span></a>
+        <a href="audits.html" class="nav-item"><i class="ri-file-list-3-line"></i><span class="nav-label">Audit Logs</span></a>
+        <div style="flex:1"></div>
+        <a href="#" class="nav-item" onclick="event.preventDefault();logout();" style="color:#EF4444;">
+            <i class="ri-logout-box-r-line"></i><span class="nav-label">Logout</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Main -->
+<main class="main-wrapper">
+    <header>
+        <div class="header-title">
+            <h1>Dispatch Control</h1>
+            <span>Real-time authorization engine</span>
+        </div>
+        <div class="header-right">
+            <span class="live-badge"><span class="live-dot"></span> Live</span>
+            <div class="avatar" id="userAvatar">CO</div>
+        </div>
+    </header>
+
+    <div class="page-content">
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#ECFDF5;color:#059669;"><i class="ri-checkbox-circle-line"></i></div>
+                <div>
+                    <div class="stat-val" id="stat-auth" style="color:#059669;">—</div>
+                    <div class="stat-label">Authorized Today</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#FEF2F2;color:#DC2626;"><i class="ri-close-circle-line"></i></div>
+                <div>
+                    <div class="stat-val" id="stat-deny" style="color:#DC2626;">—</div>
+                    <div class="stat-label">Denied Today</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#EFF6FF;color:#2563EB;"><i class="ri-shield-check-line"></i></div>
+                <div>
+                    <div class="stat-val" id="stat-rate" style="color:#2563EB;">—%</div>
+                    <div class="stat-label">Authorization Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dispatch-grid">
+
+            <!-- Auth Form -->
+            <div>
+                <div class="card">
+                    <div class="card-title"><i class="ri-key-2-line"></i> Request Dispatch Authorization</div>
+
+                    <div class="form-group">
+                        <label class="form-label">Vehicle Registration Number</label>
+                        <input type="text" id="regInput" class="form-input mono" placeholder="e.g. TN-45-AB-1234" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Secret Authorization Key <span style="color:var(--text-secondary);font-weight:400;">(optional)</span></label>
+                        <input type="password" id="keyInput" class="form-input mono" placeholder="TFL-XXXX-XXXX-XXXX">
+                    </div>
+
+                    <button class="btn-authorize" id="authBtn" onclick="requestAuth()">
+                        <i class="ri-send-plane-line"></i> Request Authorization
+                    </button>
+
+                    <!-- Check steps -->
+                    <div class="checks-list" id="checksList">
+                        <div class="check-item idle" id="chk-found">
+                            <div class="check-dot"><i class="ri-circle-line"></i></div>
+                            <span>Vehicle Registry Lookup</span>
+                        </div>
+                        <div class="check-item idle" id="chk-personal">
+                            <div class="check-dot"><i class="ri-circle-line"></i></div>
+                            <span>Commercial Vehicle Verification</span>
+                        </div>
+                        <div class="check-item idle" id="chk-blocked">
+                            <div class="check-dot"><i class="ri-circle-line"></i></div>
+                            <span>Administrative Block Check</span>
+                        </div>
+                        <div class="check-item idle" id="chk-insurance">
+                            <div class="check-dot"><i class="ri-circle-line"></i></div>
+                            <span>Insurance Validity</span>
+                        </div>
+                    </div>
+
+                    <!-- Result -->
+                    <div class="result-card" id="resultCard">
+                        <div class="result-heading" id="resultHeading"></div>
+                        <div class="result-meta" id="resultMeta"></div>
+                        <div class="result-actions">
+                            <button class="btn-sm btn-reset" onclick="resetForm()"><i class="ri-refresh-line"></i> New Request</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side: recent attempts -->
+            <div class="card">
+                <div class="card-title" style="justify-content:space-between;">
+                    <span><i class="ri-list-check"></i> Recent Attempts</span>
+                    <button onclick="loadLogs()" style="background:none;border:none;cursor:pointer;color:var(--accent-blue);font-size:.8rem;font-weight:600;">Refresh</button>
+                </div>
+                <div class="log-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Vehicle</th>
+                                <th>Result</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTbody">
+                            <tr><td colspan="4" class="empty-state"><i class="ri-loader-4-line ri-spin"></i>Loading…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script>
+    /* ── Helpers ── */
+    function logout() { TruFleet.clearCurrentUser(); window.location.href = 'register.html'; }
+
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+
+    function setCheck(id, state, icon) {
+        const el = document.getElementById(id);
+        el.className = 'check-item ' + state;
+        el.querySelector('.check-dot').innerHTML = `<i class="${icon}"></i>`;
+    }
+
+    function resetChecks() {
+        ['chk-found','chk-personal','chk-blocked','chk-insurance'].forEach(id => {
+            setCheck(id, 'idle', 'ri-circle-line');
+        });
+        document.getElementById('resultCard').style.display = 'none';
+    }
+
+    function fmtTime(iso) {
+        if (!iso) return '—';
+        return new Date(iso).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    }
+
+    /* ── Stats loader ── */
+    async function loadStats() {
+        try {
+            const BASE = (window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+            const r = await fetch(BASE + '/api/dispatch/stats');
+            const d = await r.json();
+            document.getElementById('stat-auth').textContent = d.authorized ?? '0';
+            document.getElementById('stat-deny').textContent = d.denied ?? '0';
+            const total = (d.authorized || 0) + (d.denied || 0);
+            const rate = total ? Math.round((d.authorized / total) * 100) : 0;
+            document.getElementById('stat-rate').textContent = rate + '%';
+        } catch(e) {
+            document.getElementById('stat-auth').textContent = '0';
+            document.getElementById('stat-deny').textContent = '0';
+            document.getElementById('stat-rate').textContent = '—%';
+        }
+    }
+
+    /* ── Log loader ── */
+    async function loadLogs() {
+        const tbody = document.getElementById('logTbody');
+        try {
+            const BASE = (window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+            const r = await fetch(BASE + '/api/dispatch/logs?limit=30');
+            const logs = await r.json();
+            if (!logs.length) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#94A3B8;"><i class="ri-inbox-2-line" style="font-size:1.5rem;display:block;margin-bottom:.5rem;"></i>No dispatch requests yet</td></tr>';
+                return;
+            }
+            tbody.innerHTML = logs.map(l => {
+                const auth = l.action === 'DISPATCH_AUTHORIZED';
+                return `<tr>
+                    <td style="color:var(--text-secondary);font-size:.8rem;">${fmtTime(l.created_at)}</td>
+                    <td class="reg-mono">${l.entity_id || '—'}</td>
+                    <td><span class="status-pill ${auth ? 'pill-auth' : 'pill-deny'}">
+                        <i class="${auth ? 'ri-check-line' : 'ri-close-line'}"></i>
+                        ${auth ? 'Authorized' : 'Denied'}
+                    </span></td>
+                    <td style="font-size:.8rem;color:var(--text-secondary);">${l.detail || '—'}</td>
+                </tr>`;
+            }).join('');
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:2rem;color:#EF4444;">Failed to load logs</td></tr>';
+        }
+    }
+
+    /* ── Main auth flow ── */
+    async function requestAuth() {
+        const reg = document.getElementById('regInput').value.trim();
+        if (!reg) {
+            document.getElementById('regInput').focus();
+            document.getElementById('regInput').style.borderColor = '#EF4444';
+            setTimeout(() => document.getElementById('regInput').style.borderColor = '', 2000);
+            return;
+        }
+
+        resetChecks();
+        const btn = document.getElementById('authBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Processing…';
+
+        try {
+            // Animate through checks
+            setCheck('chk-found', 'pending', 'ri-loader-4-line ri-spin');
+            await delay(600);
+
+            const BASE = (window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+            const r = await fetch(BASE + '/api/dispatch/authorize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reg_number: reg, secret_key: document.getElementById('keyInput').value.trim() || null })
+            });
+            const data = await r.json();
+            const checks = data.checks || {};
+
+            // Animate check results
+            setCheck('chk-found', checks.found ? 'pass' : 'fail', checks.found ? 'ri-check-line' : 'ri-close-line');
+            await delay(400);
+
+            if (!checks.found) {
+                showResult(data);
+            } else {
+                setCheck('chk-personal', 'pending', 'ri-loader-4-line ri-spin');
+                await delay(400);
+                setCheck('chk-personal', checks.personal === true ? 'fail' : 'pass', checks.personal === true ? 'ri-close-line' : 'ri-check-line');
+                await delay(400);
+
+                if (checks.personal) {
+                    showResult(data);
+                } else {
+                    setCheck('chk-blocked', 'pending', 'ri-loader-4-line ri-spin');
+                    await delay(400);
+                    setCheck('chk-blocked', checks.not_blocked ? 'pass' : 'fail', checks.not_blocked ? 'ri-check-line' : 'ri-close-line');
+                    await delay(400);
+
+                    setCheck('chk-insurance', 'pending', 'ri-loader-4-line ri-spin');
+                    await delay(500);
+                    setCheck('chk-insurance', checks.insurance_valid ? 'pass' : 'fail', checks.insurance_valid ? 'ri-check-line' : 'ri-close-line');
+                    await delay(300);
+
+                    showResult(data);
+                }
+            }
+
+            // Refresh stats + log
+            await loadStats();
+            await loadLogs();
+
+        } catch(e) {
+            setCheck('chk-found', 'fail', 'ri-close-line');
+            showResult({ result: 'DENIED', reason: 'Network error — could not reach server' });
+        }
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ri-send-plane-line"></i> Request Authorization';
+    }
+
+    function showResult(data) {
+        const card = document.getElementById('resultCard');
+        const heading = document.getElementById('resultHeading');
+        const meta = document.getElementById('resultMeta');
+
+        const auth = data.result === 'AUTHORIZED';
+        card.className = 'result-card ' + (auth ? 'authorized' : 'denied');
+
+        heading.innerHTML = auth
+            ? '<i class="ri-checkbox-circle-fill" style="color:#10B981;font-size:1.75rem;"></i> DISPATCH AUTHORIZED'
+            : '<i class="ri-close-circle-fill" style="color:#EF4444;font-size:1.75rem;"></i> DISPATCH DENIED';
+
+        if (auth) {
+            meta.innerHTML = `
+                <div class="result-meta-item"><div class="result-meta-label">Vehicle</div><div class="result-meta-val">${data.vehicle?.id || '—'}</div></div>
+                <div class="result-meta-item"><div class="result-meta-label">Authorization Code</div><div class="result-meta-val">${data.code || '—'}</div></div>
+                <div class="result-meta-item"><div class="result-meta-label">Insurance Days Left</div><div class="result-meta-val" style="color:#10B981;">${data.checks?.days_remaining ?? '—'} days</div></div>
+                <div class="result-meta-item"><div class="result-meta-label">Owner</div><div class="result-meta-val">${data.vehicle?.owner || '—'}</div></div>
+                <div class="result-meta-item"><div class="result-meta-label">Timestamp</div><div class="result-meta-val">${new Date().toLocaleTimeString()}</div></div>
+                <div class="result-meta-item"><div class="result-meta-label">Valid For</div><div class="result-meta-val">24 hours</div></div>
+            `;
+        } else {
+            meta.innerHTML = `
+                <div class="result-meta-item" style="grid-column:1/-1;">
+                    <div class="result-meta-label">Reason for Denial</div>
+                    <div class="result-meta-val" style="color:#EF4444;font-family:'Inter';font-size:.95rem;">${data.reason || 'Unknown'}</div>
+                </div>
+                ${data.vehicle ? `<div class="result-meta-item"><div class="result-meta-label">Vehicle</div><div class="result-meta-val">${data.vehicle.id || '—'}</div></div>` : ''}
+                <div class="result-meta-item"><div class="result-meta-label">Timestamp</div><div class="result-meta-val">${new Date().toLocaleTimeString()}</div></div>
+            `;
+            // Shake animation
+            card.classList.remove('shake');
+            void card.offsetWidth;
+            card.classList.add('shake');
+        }
+
+        card.style.display = 'block';
+        card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+    }
+
+    function resetForm() {
+        document.getElementById('regInput').value = '';
+        document.getElementById('keyInput').value = '';
+        resetChecks();
+    }
+
+    /* Enter key support */
+    document.addEventListener('DOMContentLoaded', () => {
+        ['regInput','keyInput'].forEach(id => {
+            document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') requestAuth(); });
+        });
+
+        const user = TruFleet.getCurrentUser();
+        if (user) document.getElementById('userAvatar').textContent = user.initials || 'CO';
+
+        loadStats();
+        loadLogs();
+        setInterval(() => { loadStats(); loadLogs(); }, 15000);
+    });
+</script>
+</body>
+</html>

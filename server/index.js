@@ -17,6 +17,7 @@ const analyticsRouter       = require('./routes/analytics');
 const notificationsRouter   = require('./routes/notifications');
 const fleetVehiclesRouter   = require('./routes/fleet_vehicles');
 const emailRecipientsRouter = require('./routes/email_recipients');
+const dispatchRouter        = require('./routes/dispatch');
 
 const { startScheduler } = require('./services/scheduler');
 
@@ -56,6 +57,7 @@ app.use('/api/analytics',         analyticsRouter);
 app.use('/api/notifications',     notificationsRouter);
 app.use('/api/fleet-vehicles',    fleetVehiclesRouter);
 app.use('/api/email-recipients',  emailRecipientsRouter);
+app.use('/api/dispatch',          dispatchRouter);
 
 /* ── Health check ── */
 app.get('/api/health', (_req, res) => {
