@@ -18,6 +18,9 @@ const notificationsRouter   = require('./routes/notifications');
 const fleetVehiclesRouter   = require('./routes/fleet_vehicles');
 const emailRecipientsRouter = require('./routes/email_recipients');
 const dispatchRouter        = require('./routes/dispatch');
+const ownersRouter          = require('./routes/owners');
+const insuranceRouter       = require('./routes/insurance');
+const identityRouter        = require('./routes/identity');
 
 const { startScheduler } = require('./services/scheduler');
 
@@ -58,6 +61,9 @@ app.use('/api/notifications',     notificationsRouter);
 app.use('/api/fleet-vehicles',    fleetVehiclesRouter);
 app.use('/api/email-recipients',  emailRecipientsRouter);
 app.use('/api/dispatch',          dispatchRouter);
+app.use('/api/owners',            ownersRouter);
+app.use('/api/insurance',         insuranceRouter);
+app.use('/api/identity',          identityRouter);
 
 /* ── Health check ── */
 app.get('/api/health', (_req, res) => {

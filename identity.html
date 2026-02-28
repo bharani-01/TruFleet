@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Identity Management — TruFleet</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- RemixIcon -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+  <!-- GSAP -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.2/dist/gsap.min.js"></script>
+
+  <style>
+    /* ── Design Tokens ───────────────────────────────────────────────────── */
+    :root {
+      --bg-base:       #0B1120;
+      --bg-card:       #111827;
+      --bg-sidebar:    #0F172A;
+      --bg-hover:      #1E293B;
+      --border:        #1E293B;
+      --border-mid:    #334155;
+      --text-primary:  #F1F5F9;
+      --text-secondary:#94A3B8;
+      --text-muted:    #475569;
+      --accent:        #6366F1;
+      --accent-glow:   rgba(99,102,241,.25);
+      --green:         #22C55E;
+      --amber:         #F59E0B;
+      --red:           #EF4444;
+      --cyan:          #06B6D4;
+      --sidebar-w:     68px;
+      --sidebar-exp:   220px;
+      --radius:        12px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg-base); color: var(--text-primary); min-height: 100vh; display: flex; }
+
+    /* ── Sidebar ─────────────────────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: fixed; left:0; top:0; bottom:0;
+      transition: width .25s cubic-bezier(.4,0,.2,1);
+      z-index: 100; overflow: hidden;
+    }
+    .sidebar:hover { width: var(--sidebar-exp); }
+    .sidebar-logo {
+      height: 60px; display:flex; align-items:center; gap:12px;
+      padding: 0 18px; border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .sidebar-logo .icon { font-size:1.5rem; color: var(--accent); flex-shrink:0; }
+    .sidebar-logo .wordmark { font-family:'Manrope',sans-serif; font-size:1.1rem; font-weight:800; opacity:0; transition:opacity .2s .1s; }
+    .sidebar:hover .wordmark { opacity:1; }
+    .nav-section { flex:1; padding: 12px 0; overflow-y:auto; }
+    .nav-item {
+      display:flex; align-items:center; gap:14px;
+      padding: 11px 18px; color: var(--text-secondary);
+      text-decoration:none; white-space:nowrap;
+      transition: background .15s, color .15s;
+      border-radius:0;
+    }
+    .nav-item i { font-size:1.2rem; flex-shrink:0; width:22px; text-align:center; }
+    .nav-label { font-size:.875rem; font-weight:500; opacity:0; transition:opacity .15s .05s; }
+    .sidebar:hover .nav-label { opacity:1; }
+    .nav-item:hover, .nav-item.active { background: var(--bg-hover); color: var(--accent); }
+    .nav-item.active { border-left: 3px solid var(--accent); }
+
+    /* ── Main ────────────────────────────────────────────────────────────── */
+    .main { margin-left: var(--sidebar-w); flex:1; min-height:100vh; display:flex; flex-direction:column; }
+
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    .header {
+      height:60px; background:var(--bg-sidebar); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 0 28px; position: sticky; top:0; z-index:50;
+    }
+    .header h1 { font-family:'Manrope',sans-serif; font-size:1.1rem; font-weight:700; display:flex; align-items:center; gap:10px; }
+    .header h1 i { color: var(--accent); }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    .user-chip { display:flex; align-items:center; gap:8px; background:var(--bg-hover); padding:6px 14px; border-radius:20px; font-size:.8rem; color:var(--text-secondary); }
+    .user-chip span { font-weight:600; color:var(--text-primary); }
+
+    /* ── Page body ───────────────────────────────────────────────────────── */
+    .page-body { flex:1; padding: 28px; }
+
+    /* ── Tab bar ─────────────────────────────────────────────────────────── */
+    .tab-bar {
+      display:flex; gap:4px; margin-bottom:28px;
+      background:var(--bg-card); border:1px solid var(--border);
+      padding:6px; border-radius:14px; width:fit-content;
+    }
+    .tab-btn {
+      padding: 8px 22px; border:none; background:transparent;
+      color:var(--text-secondary); font-size:.875rem; font-weight:500;
+      border-radius:10px; cursor:pointer; display:flex; align-items:center; gap:8px;
+      transition: background .15s, color .15s;
+    }
+    .tab-btn.active { background: var(--accent); color:#fff; }
+    .tab-btn:not(.active):hover { background: var(--bg-hover); color:var(--text-primary); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* ── Cards / Surfaces ────────────────────────────────────────────────── */
+    .card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius: var(--radius); padding:24px;
+    }
+    .card-sm { padding:16px 20px; }
+
+    /* ── Stats strip ─────────────────────────────────────────────────────── */
+    .stats-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin-bottom:24px; }
+    .stat-card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius: var(--radius); padding:16px 18px;
+    }
+    .stat-label { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted); margin-bottom:6px; }
+    .stat-val { font-family:'Manrope',sans-serif; font-size:1.6rem; font-weight:800; }
+    .stat-val.green { color: var(--green); }
+    .stat-val.red   { color: var(--red);   }
+    .stat-val.amber { color: var(--amber); }
+    .stat-val.cyan  { color: var(--cyan);  }
+    .stat-val.accent{ color: var(--accent);}
+
+    /* ─ Verify tab ────────────────────────────────────────────────────────── */
+    .verify-layout { display:grid; grid-template-columns:420px 1fr; gap:24px; }
+    .search-box {
+      display:flex; gap:0; margin-bottom:24px;
+    }
+    .search-box input {
+      flex:1; height:46px; background:var(--bg-hover); border:1px solid var(--border-mid);
+      border-right:none; border-radius:10px 0 0 10px; padding:0 16px;
+      color:var(--text-primary); font-size:.9rem; outline:none; font-family:inherit;
+      text-transform:uppercase;
+    }
+    .search-box input::placeholder { text-transform:none; color:var(--text-muted); }
+    .search-box input:focus { border-color: var(--accent); }
+    .btn-verify {
+      height:46px; padding:0 20px; background:var(--accent); border:none;
+      border-radius:0 10px 10px 0; color:#fff; font-size:.875rem; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; gap:8px; white-space:nowrap;
+    }
+    .btn-verify:hover { background:#4F46E5; }
+    .btn-verify.loading { opacity:.7; pointer-events:none; }
+
+    /* Chain checks */
+    .chain-box { display:flex; flex-direction:column; gap:6px; }
+    .check-item {
+      display:flex; align-items:center; gap:12px;
+      padding:10px 14px; border-radius:8px;
+      background:var(--bg-hover); border:1px solid var(--border);
+      transition: border-color .3s;
+    }
+    .check-item.pass  { border-color: var(--green); }
+    .check-item.fail  { border-color: var(--red); }
+    .check-item.warn  { border-color: var(--amber); }
+    .check-item.skip  { opacity:.5; }
+    .check-icon { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.9rem; }
+    .check-item.idle .check-icon  { background:#1E293B; color:var(--text-muted); }
+    .check-item.pass .check-icon  { background:rgba(34,197,94,.15); color:var(--green); }
+    .check-item.fail .check-icon  { background:rgba(239,68,68,.15); color:var(--red); }
+    .check-item.warn .check-icon  { background:rgba(245,158,11,.15); color:var(--amber); }
+    .check-item.skip .check-icon  { background:#1E293B; color:var(--text-muted); }
+    .check-item.pending .check-icon { background:rgba(99,102,241,.2); color:var(--accent); }
+    .check-info .check-title { font-size:.84rem; font-weight:600; }
+    .check-info .check-note  { font-size:.75rem; color:var(--text-secondary); margin-top:2px; }
+
+    /* Identity card */
+    .id-card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius: var(--radius); overflow:hidden;
+      display:none;
+    }
+    .id-card.visible { display:block; }
+    .id-card-banner {
+      padding:20px 24px;
+      background:linear-gradient(135deg,#1e293b 0%,#0f172a 100%);
+      border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .id-card-banner .verdict {
+      font-family:'Manrope',sans-serif; font-size:1.4rem; font-weight:800;
+      display:flex; align-items:center; gap:10px;
+    }
+    .verdict.auth  { color:var(--green); }
+    .verdict.denied{ color:var(--red); }
+    .denial-reason { font-size:.8rem; color:var(--red); background:rgba(239,68,68,.1); padding:6px 12px; border-radius:6px; margin-top:8px; }
+
+    .id-sections { display:grid; grid-template-columns:repeat(3,1fr); gap:0; }
+    .id-section { padding:20px 24px; border-right:1px solid var(--border); }
+    .id-section:last-child { border-right:none; }
+    .id-section-title { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+    .id-section-title i { font-size:.9rem; }
+    .id-field { margin-bottom:10px; }
+    .id-field .lbl { font-size:.72rem; color:var(--text-muted); margin-bottom:2px; }
+    .id-field .val { font-size:.88rem; font-weight:600; color:var(--text-primary); font-family:'JetBrains Mono',monospace; }
+    .id-field .val.normal { font-family:'Inter',sans-serif; }
+    .kyc-badge, .status-badge, .risk-badge {
+      display:inline-flex; align-items:center; gap:5px;
+      padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:700;
+    }
+    .kyc-badge.verified { background:rgba(34,197,94,.15); color:var(--green); }
+    .kyc-badge.pending  { background:rgba(245,158,11,.15); color:var(--amber); }
+    .kyc-badge.rejected { background:rgba(239,68,68,.15);  color:var(--red); }
+    .status-badge.active  { background:rgba(34,197,94,.15); color:var(--green); }
+    .status-badge.blocked { background:rgba(239,68,68,.15); color:var(--red); }
+    .risk-badge.safe     { background:rgba(34,197,94,.15); color:var(--green); }
+    .risk-badge.warning  { background:rgba(245,158,11,.15);color:var(--amber); }
+    .risk-badge.critical { background:rgba(239,68,68,.15); color:var(--red); }
+    .risk-badge.expired  { background:rgba(127,29,29,.3);  color:#FCA5A5; }
+
+    /* Empty placeholder */
+    .empty-placeholder {
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap:12px; padding:60px 20px; color:var(--text-muted); text-align:center;
+    }
+    .empty-placeholder i { font-size:2.5rem; opacity:.4; }
+    .empty-placeholder p { font-size:.875rem; }
+
+    /* ─ Owners tab ────────────────────────────────────────────────────────── */
+    .owners-toolbar {
+      display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap;
+    }
+    .search-input {
+      height:38px; background:var(--bg-hover); border:1px solid var(--border-mid);
+      border-radius:8px; padding:0 12px 0 36px; color:var(--text-primary);
+      font-size:.875rem; outline:none; font-family:inherit; width:240px;
+    }
+    .search-input:focus { border-color:var(--accent); }
+    .search-wrap { position:relative; }
+    .search-wrap i { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:.9rem; pointer-events:none; }
+    .filter-btn {
+      height:38px; padding:0 14px; background:var(--bg-hover); border:1px solid var(--border);
+      border-radius:8px; color:var(--text-secondary); font-size:.8rem; font-weight:500;
+      cursor:pointer; transition:background .15s, border-color .15s, color .15s;
+    }
+    .filter-btn.active { background:rgba(99,102,241,.15); border-color:var(--accent); color:var(--accent); }
+    .btn-primary {
+      height:38px; padding:0 16px; background:var(--accent); border:none;
+      border-radius:8px; color:#fff; font-size:.875rem; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; gap:7px; transition:background .15s;
+    }
+    .btn-primary:hover { background:#4F46E5; }
+
+    .owners-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:16px; }
+    .owner-card {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius: var(--radius); padding:18px 20px;
+      cursor:pointer; transition: border-color .2s, transform .15s;
+    }
+    .owner-card:hover { border-color: var(--accent); transform:translateY(-2px); }
+    .owner-card-top { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .owner-avatar {
+      width:44px; height:44px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Manrope',sans-serif; font-size:1rem; font-weight:800; color:#fff; flex-shrink:0;
+    }
+    .owner-name { font-weight:600; font-size:.9rem; margin-bottom:3px; }
+    .owner-sub  { font-size:.78rem; color:var(--text-muted); }
+    .owner-meta { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .owner-meta-item { font-size:.78rem; color:var(--text-secondary); display:flex; align-items:center; gap:5px; }
+    .owner-meta-item i { font-size:.8rem; color:var(--text-muted); }
+    .owner-footer { display:flex; align-items:center; justify-content:space-between; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+
+    /* ─ Policy tab ────────────────────────────────────────────────────────── */
+    .policy-search-bar { display:flex; gap:12px; margin-bottom:20px; align-items:center; }
+    .policy-table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:.84rem; }
+    th {
+      text-align:left; padding:10px 14px; font-size:.72rem; font-weight:700;
+      text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);
+      background:var(--bg-hover); border-bottom:1px solid var(--border);
+    }
+    td { padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background:var(--bg-hover); }
+    .mono { font-family:'JetBrains Mono',monospace; font-size:.8rem; }
+
+    /* ─ Modal ─────────────────────────────────────────────────────────────── */
+    .overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200; align-items:center; justify-content:center; }
+    .overlay.open { display:flex; }
+    .modal {
+      background:var(--bg-card); border:1px solid var(--border-mid);
+      border-radius:16px; padding:28px; width:560px; max-height:90vh; overflow-y:auto;
+      box-shadow:0 25px 60px rgba(0,0,0,.5);
+    }
+    .modal-title { font-family:'Manrope',sans-serif; font-weight:700; font-size:1.05rem; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; }
+    .modal-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem; }
+    .modal-close:hover { color:var(--text-primary); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-group { display:flex; flex-direction:column; gap:5px; }
+    .form-group.full { grid-column:1/-1; }
+    .form-group label { font-size:.78rem; font-weight:600; color:var(--text-secondary); }
+    .form-group input, .form-group select, .form-group textarea {
+      height:38px; background:var(--bg-hover); border:1px solid var(--border-mid);
+      border-radius:8px; padding:0 12px; color:var(--text-primary);
+      font-size:.875rem; font-family:inherit; outline:none;
+    }
+    .form-group textarea { height:72px; padding:10px 12px; resize:vertical; }
+    .form-group input:focus, .form-group select:focus { border-color:var(--accent); }
+    .form-group select option { background:#1E293B; }
+    .modal-actions { display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
+    .btn-ghost {
+      height:38px; padding:0 16px; background:transparent; border:1px solid var(--border-mid);
+      border-radius:8px; color:var(--text-secondary); font-size:.875rem; cursor:pointer;
+    }
+    .btn-ghost:hover { border-color:var(--text-muted); color:var(--text-primary); }
+
+    /* ─ Owner detail drawer ───────────────────────────────────────────────── */
+    .drawer {
+      position:fixed; right:-520px; top:0; bottom:0; width:500px;
+      background:var(--bg-card); border-left:1px solid var(--border-mid);
+      z-index:150; overflow-y:auto; transition:right .3s cubic-bezier(.4,0,.2,1);
+      padding:28px;
+    }
+    .drawer.open { right:0; }
+    .drawer-overlay { display:none; position:fixed; inset:0; z-index:149; background:rgba(0,0,0,.3); }
+    .drawer-overlay.open { display:block; }
+    .drawer-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:24px; }
+    .drawer-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem; padding:4px; }
+
+    /* KYC actions */
+    .kyc-actions { display:flex; gap:8px; margin-top:12px; }
+    .btn-kyc {
+      height:32px; padding:0 14px; border:none; border-radius:6px;
+      font-size:.78rem; font-weight:600; cursor:pointer;
+    }
+    .btn-kyc.verify  { background:rgba(34,197,94,.15); color:var(--green); border:1px solid rgba(34,197,94,.3); }
+    .btn-kyc.reject  { background:rgba(239,68,68,.15);  color:var(--red);   border:1px solid rgba(239,68,68,.3); }
+    .btn-kyc.pending { background:rgba(245,158,11,.15);  color:var(--amber); border:1px solid rgba(245,158,11,.3); }
+    .btn-kyc:hover   { opacity:.8; }
+
+    /* Ownership history timeline */
+    .timeline { display:flex; flex-direction:column; gap:0; }
+    .timeline-item { display:flex; gap:14px; padding-bottom:18px; position:relative; }
+    .timeline-item::before { content:''; position:absolute; left:15px; top:28px; bottom:0; width:1px; background:var(--border); }
+    .timeline-item:last-child::before { display:none; }
+    .timeline-dot { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--bg-hover); border:1px solid var(--border-mid); font-size:.75rem; }
+    .timeline-dot.current { background:rgba(99,102,241,.2); border-color:var(--accent); color:var(--accent); }
+    .timeline-content .tl-title { font-size:.84rem; font-weight:600; }
+    .timeline-content .tl-sub   { font-size:.76rem; color:var(--text-muted); margin-top:2px; }
+
+    .loading-row td { text-align:center; padding:32px; color:var(--text-muted); }
+    .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:20px; font-size:.72rem; font-weight:600; }
+    .tag.active      { background:rgba(34,197,94,.12); color:var(--green); }
+    .tag.expired     { background:rgba(239,68,68,.12);  color:var(--red); }
+    .tag.suspended   { background:rgba(245,158,11,.12); color:var(--amber); }
+    .tag.cancelled   { background:rgba(100,116,139,.15);color:var(--text-muted); }
+    .tag.superseded  { background:rgba(100,116,139,.15);color:var(--text-muted); }
+
+    .icon-btn { background:none; border:1px solid var(--border); border-radius:6px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); font-size:.9rem; }
+    .icon-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+    .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .section-header .section-title { font-family:'Manrope',sans-serif; font-weight:700; font-size:.95rem; }
+
+    @media(max-width:1100px){
+      .stats-strip { grid-template-columns:repeat(3,1fr); }
+      .verify-layout { grid-template-columns:1fr; }
+      .id-sections { grid-template-columns:1fr; }
+      .id-section { border-right:none; border-bottom:1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────────────────────────────── -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <i class="ri-truck-fill icon"></i>
+    <span class="wordmark">TruFleet</span>
+  </div>
+  <div class="nav-section">
+    <a href="dashboard.html" class="nav-item"><i class="ri-dashboard-line"></i><span class="nav-label">Dashboard</span></a>
+    <a href="vehicle_management.html" class="nav-item"><i class="ri-car-line"></i><span class="nav-label">Vehicles</span></a>
+    <a href="insurance_monitor.html" class="nav-item"><i class="ri-shield-check-line"></i><span class="nav-label">Insurance</span></a>
+    <a href="dispatch.html" class="nav-item"><i class="ri-traffic-light-line"></i><span class="nav-label">Dispatch Control</span></a>
+    <a href="identity.html" class="nav-item active"><i class="ri-fingerprint-line"></i><span class="nav-label">Identity</span></a>
+    <a href="owner.html" class="nav-item"><i class="ri-truck-line"></i><span class="nav-label">Owner Portal</span></a>
+    <a href="audits.html" class="nav-item"><i class="ri-file-list-3-line"></i><span class="nav-label">Audit Log</span></a>
+    <a href="email_recipients.html" class="nav-item"><i class="ri-mail-settings-line"></i><span class="nav-label">Email Config</span></a>
+  </div>
+</nav>
+
+<!-- ── Owner Modal ─────────────────────────────────────────────────────────── -->
+<div class="overlay" id="ownerModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="ownerModalTitle">Register Owner</span>
+      <button class="modal-close" onclick="closeOwnerModal()"><i class="ri-close-line"></i></button>
+    </div>
+    <form id="ownerForm">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Full Name / Company Name *</label>
+          <input type="text" id="o_name" placeholder="e.g. Rajesh Kumar / ABC Logistics Pvt Ltd" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="o_email" placeholder="owner@example.com" />
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" id="o_phone" placeholder="+91 98765 43210" />
+        </div>
+        <div class="form-group">
+          <label>License / Company Reg. No.</label>
+          <input type="text" id="o_license" placeholder="DL-0420110012345" />
+        </div>
+        <div class="form-group">
+          <label>License Type</label>
+          <select id="o_license_type">
+            <option value="individual">Individual</option>
+            <option value="company">Company</option>
+          </select>
+        </div>
+        <div class="form-group full">
+          <label>Address</label>
+          <textarea id="o_address" placeholder="Full address..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>KYC Status</label>
+          <select id="o_kyc">
+            <option value="pending">Pending</option>
+            <option value="verified">Verified</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" onclick="closeOwnerModal()">Cancel</button>
+        <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Save Owner</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Insurance Policy Modal ──────────────────────────────────────────────── -->
+<div class="overlay" id="policyModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Add Insurance Policy</span>
+      <button class="modal-close" onclick="closePolicyModal()"><i class="ri-close-line"></i></button>
+    </div>
+    <form id="policyForm">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Vehicle Reg. Number *</label>
+          <input type="text" id="p_vehicle_id" placeholder="e.g. MH12DE1433" style="text-transform:uppercase;" required />
+        </div>
+        <div class="form-group">
+          <label>Insurance Provider *</label>
+          <input type="text" id="p_provider" placeholder="New India Assurance" required />
+        </div>
+        <div class="form-group">
+          <label>Policy Number *</label>
+          <input type="text" id="p_policy_number" placeholder="NIA/2025/123456" required />
+        </div>
+        <div class="form-group">
+          <label>Policy Type</label>
+          <select id="p_policy_type">
+            <option value="comprehensive">Comprehensive</option>
+            <option value="third_party">Third Party</option>
+            <option value="commercial">Commercial</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Premium (₹)</label>
+          <input type="number" id="p_premium" placeholder="45000" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Valid From *</label>
+          <input type="date" id="p_valid_from" required />
+        </div>
+        <div class="form-group">
+          <label>Valid Until *</label>
+          <input type="date" id="p_valid_until" required />
+        </div>
+        <div class="form-group">
+          <label>Nominee</label>
+          <input type="text" id="p_nominee" placeholder="Nominee name" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-ghost" onclick="closePolicyModal()">Cancel</button>
+        <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Save Policy</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Owner Detail Drawer ─────────────────────────────────────────────────── -->
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="ownerDrawer">
+  <div class="drawer-header">
+    <div>
+      <div id="drawerOwnerName" style="font-family:'Manrope',sans-serif;font-weight:700;font-size:1.1rem;"></div>
+      <div id="drawerOwnerSub" style="font-size:.8rem;color:var(--text-muted);margin-top:2px;"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()"><i class="ri-close-line"></i></button>
+  </div>
+  <div id="drawerContent">Loading...</div>
+</div>
+
+<!-- ── Main ────────────────────────────────────────────────────────────────── -->
+<div class="main">
+  <header class="header">
+    <h1><i class="ri-fingerprint-line"></i> Owner &amp; Insurance Identity Management</h1>
+    <div class="header-right">
+      <div class="user-chip"><i class="ri-user-line"></i><span id="headerUser">Admin</span></div>
+    </div>
+  </header>
+
+  <div class="page-body">
+
+    <!-- Stats strip -->
+    <div class="stats-strip" id="statsStrip">
+      <div class="stat-card"><div class="stat-label">Verified Today</div><div class="stat-val green" id="stat-auth">—</div></div>
+      <div class="stat-card"><div class="stat-label">Denied Today</div><div class="stat-val red" id="stat-denied">—</div></div>
+      <div class="stat-card"><div class="stat-label">Auth Rate</div><div class="stat-val accent" id="stat-rate">—</div></div>
+      <div class="stat-card"><div class="stat-label">Expired Policies</div><div class="stat-val red" id="stat-expired">—</div></div>
+      <div class="stat-card"><div class="stat-label">KYC Pending</div><div class="stat-val amber" id="stat-kyc">—</div></div>
+      <div class="stat-card"><div class="stat-label">Verified Owners</div><div class="stat-val green" id="stat-owners">—</div></div>
+    </div>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="switchTab('verify')" id="tab-verify"><i class="ri-shield-check-line"></i> Verify Identity</button>
+      <button class="tab-btn" onclick="switchTab('owners')" id="tab-owners"><i class="ri-team-line"></i> Owners</button>
+      <button class="tab-btn" onclick="switchTab('policies')" id="tab-policies"><i class="ri-file-shield-2-line"></i> Insurance Policies</button>
+    </div>
+
+    <!-- ── VERIFY TAB ──────────────────────────────────────────────────── -->
+    <div class="tab-panel active" id="panel-verify">
+      <div class="verify-layout">
+
+        <!-- Left: check chain -->
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div style="font-family:'Manrope',sans-serif;font-weight:700;font-size:.95rem;margin-bottom:16px;">
+              <i class="ri-search-eye-line" style="color:var(--accent);margin-right:6px;"></i>Vehicle Identity Check
+            </div>
+            <div class="search-box">
+              <input type="text" id="verifyInput" placeholder="Enter vehicle registration number..." onkeyup="if(event.key==='Enter')runVerify()" />
+              <button class="btn-verify" id="verifyBtn" onclick="runVerify()"><i class="ri-scan-2-line"></i> Verify</button>
+            </div>
+            <div class="chain-box" id="chainBox">
+              <!-- Steps rendered by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: identity card -->
+        <div>
+          <div class="id-card" id="idCard">
+            <div class="id-card-banner">
+              <div>
+                <div class="verdict" id="verdictBadge"></div>
+                <div id="denialReasonBox" class="denial-reason" style="display:none;"></div>
+              </div>
+              <div id="verdictMeta" style="text-align:right;font-size:.8rem;color:var(--text-muted);"></div>
+            </div>
+            <div class="id-sections">
+              <div class="id-section">
+                <div class="id-section-title"><i class="ri-car-line"></i> Vehicle</div>
+                <div id="idVehicle"></div>
+              </div>
+              <div class="id-section">
+                <div class="id-section-title"><i class="ri-user-line"></i> Owner</div>
+                <div id="idOwner"></div>
+              </div>
+              <div class="id-section">
+                <div class="id-section-title"><i class="ri-shield-check-line"></i> Insurance</div>
+                <div id="idInsurance"></div>
+              </div>
+            </div>
+          </div>
+          <div class="empty-placeholder" id="verifyPlaceholder">
+            <i class="ri-fingerprint-line"></i>
+            <p>Enter a vehicle registration number above and run the identity check.<br/>The full ownership &amp; insurance chain will be verified.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── OWNERS TAB ──────────────────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-owners">
+      <div class="owners-toolbar">
+        <div class="search-wrap">
+          <i class="ri-search-line"></i>
+          <input class="search-input" id="ownerSearch" placeholder="Search name, email, phone…" oninput="filterOwners()" />
+        </div>
+        <button class="filter-btn active" onclick="setOwnerFilter('all', this)">All</button>
+        <button class="filter-btn" onclick="setOwnerFilter('verified', this)">Verified</button>
+        <button class="filter-btn" onclick="setOwnerFilter('pending', this)">Pending KYC</button>
+        <button class="filter-btn" onclick="setOwnerFilter('rejected', this)">Rejected</button>
+        <div style="flex:1;"></div>
+        <button class="btn-primary" onclick="openOwnerModal()"><i class="ri-add-line"></i> Add Owner</button>
+      </div>
+      <div class="owners-grid" id="ownersGrid">
+        <div class="empty-placeholder" style="grid-column:1/-1"><i class="ri-loader-4-line"></i><p>Loading owners…</p></div>
+      </div>
+    </div>
+
+    <!-- ── POLICIES TAB ────────────────────────────────────────────────── -->
+    <div class="tab-panel" id="panel-policies">
+      <div class="policy-search-bar">
+        <div class="search-wrap" style="flex:1;max-width:360px;">
+          <i class="ri-search-line"></i>
+          <input class="search-input" style="width:100%;" id="policySearch" placeholder="Filter by vehicle, provider, policy no…" oninput="filterPolicies()" />
+        </div>
+        <button class="filter-btn active" onclick="setPolicyStatus('all', this)">All</button>
+        <button class="filter-btn" onclick="setPolicyStatus('active', this)">Active</button>
+        <button class="filter-btn" onclick="setPolicyStatus('expired', this)">Expired</button>
+        <button class="filter-btn" onclick="setPolicyStatus('cancelled', this)">Cancelled</button>
+        <div style="flex:1;"></div>
+        <button class="btn-primary" onclick="openPolicyModal()"><i class="ri-add-line"></i> Add Policy</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="policy-table-wrap">
+          <table id="policyTable">
+            <thead>
+              <tr>
+                <th>Vehicle</th>
+                <th>Provider</th>
+                <th>Policy No.</th>
+                <th>Type</th>
+                <th>Valid Until</th>
+                <th>Days Left</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="policyTbody">
+              <tr class="loading-row"><td colspan="8"><i class="ri-loader-4-line"></i> Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-body -->
+</div><!-- /main -->
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/*  TruFleet — Identity Management UI                                          */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+const API = '/api';
+let allOwners   = [];
+let allPolicies = [];
+let ownerFilter = 'all';
+let policyStatusFilter = 'all';
+let editingOwnerId = null;
+
+/* ─── Init ────────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  const user = JSON.parse(localStorage.getItem('trufleet_user') || '{}');
+  if (user?.email) document.getElementById('headerUser').textContent = user.email.split('@')[0];
+
+  initCheckChain();
+  loadStats();
+  loadOwners();
+  loadPolicies();
+});
+
+/* ─── Tabs ────────────────────────────────────────────────────────────────── */
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+/* ─── Stats ───────────────────────────────────────────────────────────────── */
+async function loadStats() {
+  try {
+    const r = await fetch(`${API}/identity/stats`);
+    const s = await r.json();
+    document.getElementById('stat-auth').textContent    = s.authorizedToday ?? 0;
+    document.getElementById('stat-denied').textContent  = s.deniedToday ?? 0;
+    document.getElementById('stat-rate').textContent    = (s.authRate ?? 0) + '%';
+    document.getElementById('stat-expired').textContent = s.expiredInsurance ?? 0;
+    document.getElementById('stat-kyc').textContent     = s.pendingKyc ?? 0;
+    document.getElementById('stat-owners').textContent  = s.verifiedOwners ?? 0;
+  } catch(e) { console.error(e); }
+}
+
+/* ─── Verify ──────────────────────────────────────────────────────────────── */
+const STEPS = [
+  { id:'VEHICLE_REGISTRY',   label:'Vehicle Registry Lookup',        icon:'ri-server-line' },
+  { id:'VEHICLE_STATUS',     label:'Administrative Status Check',     icon:'ri-shield-check-line' },
+  { id:'OWNERSHIP_RECORD',   label:'Ownership Record Lookup',         icon:'ri-user-follow-line' },
+  { id:'OWNER_ACTIVE',       label:'Owner Account Status',            icon:'ri-user-heart-line' },
+  { id:'OWNER_KYC',          label:'KYC / Identity Verification',     icon:'ri-fingerprint-line' },
+  { id:'INSURANCE_POLICY',   label:'Insurance Policy Lookup',         icon:'ri-file-shield-2-line' },
+  { id:'INSURANCE_VALIDITY', label:'Insurance Validity Check',        icon:'ri-calendar-check-line' },
+];
+
+function initCheckChain() {
+  const box = document.getElementById('chainBox');
+  box.innerHTML = STEPS.map(s => `
+    <div class="check-item idle" id="chk-${s.id}">
+      <div class="check-icon"><i class="${s.icon}"></i></div>
+      <div class="check-info">
+        <div class="check-title">${s.label}</div>
+        <div class="check-note" id="chk-note-${s.id}">Waiting…</div>
+      </div>
+    </div>`).join('');
+}
+
+function setCheckState(id, state, note) {
+  const el = document.getElementById('chk-' + id);
+  if (!el) return;
+  el.className = 'check-item ' + state;
+  const noteEl = document.getElementById('chk-note-' + id);
+  if (noteEl && note) noteEl.textContent = note;
+  // Update icon
+  const iconMap = { pass:'ri-checkbox-circle-line', fail:'ri-close-circle-line', warn:'ri-alert-line', skip:'ri-minus-circle-line', pending:'ri-loader-4-line' };
+  const stepDef = STEPS.find(s => s.id === id);
+  el.querySelector('.check-icon').innerHTML = `<i class="${iconMap[state] || stepDef?.icon || 'ri-question-line'}"></i>`;
+}
+
+async function runVerify() {
+  const vid = document.getElementById('verifyInput').value.trim().toUpperCase();
+  if (!vid) return;
+
+  const btn = document.getElementById('verifyBtn');
+  btn.classList.add('loading');
+  btn.innerHTML = '<i class="ri-loader-4-line"></i> Checking…';
+
+  // Reset all to pending
+  STEPS.forEach(s => setCheckState(s.id, 'pending', 'Checking…'));
+  document.getElementById('idCard').classList.remove('visible');
+  document.getElementById('verifyPlaceholder').style.display = 'none';
+
+  try {
+    const res  = await fetch(`${API}/identity/verify`, {
+      method: 'POST', headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ vehicle_id: vid, actor: 'dashboard' }),
+    });
+    const data = await res.json();
+
+    // Animate checks in sequence
+    for (const check of (data.checks || [])) {
+      await new Promise(r => setTimeout(r, 280));
+      const state = check.status === 'PASS' ? 'pass' : check.status === 'FAIL' ? 'fail' : check.status === 'WARN' ? 'warn' : 'skip';
+      const note  = check.note || check.reason || (check.status === 'PASS' ? 'Passed' : check.status === 'SKIP' ? 'Skipped' : '');
+      setCheckState(check.step, state, note);
+    }
+
+    // Show identity card
+    renderIdCard(data);
+    loadStats();
+
+  } catch(e) {
+    console.error(e);
+    STEPS.forEach(s => setCheckState(s.id, 'idle', 'Error — server unavailable'));
+  }
+
+  btn.classList.remove('loading');
+  btn.innerHTML = '<i class="ri-scan-2-line"></i> Verify';
+}
+
+function renderIdCard(data) {
+  const card = document.getElementById('idCard');
+  document.getElementById('verifyPlaceholder').style.display = 'none';
+
+  // Verdict
+  const vb = document.getElementById('verdictBadge');
+  const ts = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+  if (data.result === 'AUTHORIZED') {
+    vb.className = 'verdict auth';
+    vb.innerHTML = '<i class="ri-checkbox-circle-fill"></i> AUTHORIZED';
+    document.getElementById('denialReasonBox').style.display = 'none';
+  } else {
+    vb.className = 'verdict denied';
+    vb.innerHTML = '<i class="ri-close-circle-fill"></i> ACCESS DENIED';
+    const rb = document.getElementById('denialReasonBox');
+    rb.style.display = 'block';
+    rb.textContent = data.reason || 'Authorization denied';
+  }
+  document.getElementById('verdictMeta').textContent = `Checked at ${ts}`;
+
+  // Vehicle section
+  const v = data.vehicle;
+  document.getElementById('idVehicle').innerHTML = v ? `
+    <div class="id-field"><div class="lbl">Reg. Number</div><div class="val">${v.id}</div></div>
+    <div class="id-field"><div class="lbl">Vehicle</div><div class="val normal">${v.make} ${v.type}</div></div>
+    <div class="id-field"><div class="lbl">VIN</div><div class="val">${v.vin || '—'}</div></div>
+    <div class="id-field"><div class="lbl">Year</div><div class="val normal">${v.year || '—'}</div></div>
+    <div class="id-field"><div class="lbl">Status</div><div class="val normal"><span class="status-badge ${(v.status||'').toLowerCase()}">${v.status || '—'}</span></div></div>
+  ` : '<div style="color:var(--text-muted);font-size:.84rem;">Not found in registry</div>';
+
+  // Owner section
+  const o = data.owner;
+  document.getElementById('idOwner').innerHTML = o ? `
+    <div class="id-field"><div class="lbl">Name</div><div class="val normal">${o.name}</div></div>
+    <div class="id-field"><div class="lbl">Email</div><div class="val">${o.email || '—'}</div></div>
+    <div class="id-field"><div class="lbl">Type</div><div class="val normal">${capitalize(o.license_type || '—')}</div></div>
+    <div class="id-field"><div class="lbl">KYC</div><div class="val normal"><span class="kyc-badge ${o.kyc_status}">${capitalize(o.kyc_status || '—')}</span></div></div>
+  ` : '<div style="color:var(--text-muted);font-size:.84rem;">No owner on record</div>';
+
+  // Insurance section
+  const p = data.policy;
+  document.getElementById('idInsurance').innerHTML = p ? `
+    <div class="id-field"><div class="lbl">Provider</div><div class="val normal">${p.provider}</div></div>
+    <div class="id-field"><div class="lbl">Policy No.</div><div class="val">${p.policy_number}</div></div>
+    <div class="id-field"><div class="lbl">Expires</div><div class="val">${p.valid_until}</div></div>
+    <div class="id-field"><div class="lbl">Days Left</div><div class="val normal">
+      <span class="risk-badge ${p.days_remaining < 0 ? 'expired' : p.days_remaining <= 7 ? 'critical' : p.days_remaining <= 30 ? 'warning' : 'safe'}">
+        ${p.days_remaining < 0 ? 'Expired ' + Math.abs(p.days_remaining) + 'd ago' : p.days_remaining + ' days'}
+      </span>
+    </div></div>
+  ` : '<div style="color:var(--text-muted);font-size:.84rem;">No active policy found</div>';
+
+  card.classList.add('visible');
+  gsap.fromTo(card, { opacity:0, y:16 }, { opacity:1, y:0, duration:.45, ease:'power2.out' });
+}
+
+/* ─── Owners ──────────────────────────────────────────────────────────────── */
+async function loadOwners() {
+  try {
+    const res = await fetch(`${API}/owners`);
+    allOwners = await res.json();
+    renderOwners();
+  } catch(e) {
+    document.getElementById('ownersGrid').innerHTML = `<div class="empty-placeholder" style="grid-column:1/-1"><i class="ri-error-warning-line"></i><p>Failed to load owners</p></div>`;
+  }
+}
+
+function filterOwners() { renderOwners(); }
+function setOwnerFilter(f, btn) {
+  ownerFilter = f;
+  document.querySelectorAll('.owners-toolbar .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderOwners();
+}
+
+function renderOwners() {
+  const q = (document.getElementById('ownerSearch').value || '').toLowerCase();
+  let list = allOwners;
+
+  if (ownerFilter !== 'all') list = list.filter(o => o.kyc_status === ownerFilter);
+  if (q) list = list.filter(o =>
+    (o.name  || '').toLowerCase().includes(q) ||
+    (o.email || '').toLowerCase().includes(q) ||
+    (o.phone || '').toLowerCase().includes(q) ||
+    (o.license_number || '').toLowerCase().includes(q)
+  );
+
+  const grid = document.getElementById('ownersGrid');
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-placeholder" style="grid-column:1/-1"><i class="ri-user-search-line"></i><p>No owners found</p></div>`;
+    return;
+  }
+
+  const colors = ['#6366F1','#22C55E','#F59E0B','#EF4444','#06B6D4','#8B5CF6','#EC4899'];
+  grid.innerHTML = list.map((o, i) => {
+    const bg       = o.avatar_color || colors[i % colors.length];
+    const initials = (o.name || '?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const kycMap   = { verified:'<span class="kyc-badge verified"><i class="ri-check-line"></i> Verified</span>', pending:'<span class="kyc-badge pending"><i class="ri-time-line"></i> Pending</span>', rejected:'<span class="kyc-badge rejected"><i class="ri-close-line"></i> Rejected</span>' };
+    const vCount   = o.current_vehicle_count || 0;
+    return `
+    <div class="owner-card" onclick="openOwnerDrawer('${o.id}')">
+      <div class="owner-card-top">
+        <div class="owner-avatar" style="background:${bg}">${initials}</div>
+        <div>
+          <div class="owner-name">${o.name}</div>
+          <div class="owner-sub">${capitalize(o.license_type || 'individual')}</div>
+        </div>
+      </div>
+      <div class="owner-meta">
+        <div class="owner-meta-item"><i class="ri-mail-line"></i>${o.email || '—'}</div>
+        <div class="owner-meta-item"><i class="ri-phone-line"></i>${o.phone || '—'}</div>
+        <div class="owner-meta-item"><i class="ri-car-line"></i>${vCount} vehicle${vCount!==1?'s':''}</div>
+        <div class="owner-meta-item"><i class="ri-id-card-line"></i>${o.license_number || '—'}</div>
+      </div>
+      <div class="owner-footer">
+        ${kycMap[o.kyc_status] || ''}
+        <button class="icon-btn" onclick="event.stopPropagation();openOwnerEditor('${o.id}')"><i class="ri-edit-line"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+
+  gsap.fromTo('.owner-card', { opacity:0, y:20 }, { opacity:1, y:0, duration:.4, stagger:.04, ease:'power2.out' });
+}
+
+/* ─── Owner Modal ─────────────────────────────────────────────────────────── */
+function openOwnerModal() {
+  editingOwnerId = null;
+  document.getElementById('ownerModalTitle').textContent = 'Register Owner';
+  document.getElementById('ownerForm').reset();
+  document.getElementById('ownerModal').classList.add('open');
+}
+
+function openOwnerEditor(id) {
+  const o = allOwners.find(x => x.id === id);
+  if (!o) return;
+  editingOwnerId = id;
+  document.getElementById('ownerModalTitle').textContent = 'Edit Owner';
+  document.getElementById('o_name').value         = o.name || '';
+  document.getElementById('o_email').value        = o.email || '';
+  document.getElementById('o_phone').value        = o.phone || '';
+  document.getElementById('o_license').value      = o.license_number || '';
+  document.getElementById('o_license_type').value = o.license_type || 'individual';
+  document.getElementById('o_address').value      = o.address || '';
+  document.getElementById('o_kyc').value          = o.kyc_status || 'pending';
+  document.getElementById('ownerModal').classList.add('open');
+}
+
+function closeOwnerModal() {
+  document.getElementById('ownerModal').classList.remove('open');
+  editingOwnerId = null;
+}
+
+document.getElementById('ownerForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = {
+    name:          document.getElementById('o_name').value.trim(),
+    email:         document.getElementById('o_email').value.trim() || null,
+    phone:         document.getElementById('o_phone').value.trim() || null,
+    license_number:document.getElementById('o_license').value.trim() || null,
+    license_type:  document.getElementById('o_license_type').value,
+    address:       document.getElementById('o_address').value.trim() || null,
+    kyc_status:    document.getElementById('o_kyc').value,
+  };
+
+  const url    = editingOwnerId ? `${API}/owners/${editingOwnerId}` : `${API}/owners`;
+  const method = editingOwnerId ? 'PATCH' : 'POST';
+
+  try {
+    const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error || 'Save failed'); }
+    closeOwnerModal();
+    loadOwners();
+    loadStats();
+  } catch(err) { alert(err.message); }
+});
+
+/* ─── Owner Drawer ────────────────────────────────────────────────────────── */
+async function openOwnerDrawer(id) {
+  document.getElementById('ownerDrawer').classList.add('open');
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawerContent').innerHTML = '<div class="empty-placeholder"><i class="ri-loader-4-line"></i><p>Loading…</p></div>';
+  document.getElementById('drawerOwnerName').textContent = '…';
+  document.getElementById('drawerOwnerSub').textContent  = '';
+
+  try {
+    const res  = await fetch(`${API}/owners/${id}`);
+    const data = await res.json();
+
+    document.getElementById('drawerOwnerName').textContent = data.name;
+    document.getElementById('drawerOwnerSub').textContent  = `${capitalize(data.license_type || '')} · ${data.license_number || 'No license on file'}`;
+
+    const kycColor = { verified:' var(--green)', pending:'var(--amber)', rejected:'var(--red)' }[data.kyc_status] || 'var(--text-muted)';
+
+    const ownedVehicles = (data.ownerships || []).filter(o => o.is_current);
+    const history       = (data.ownerships || []).filter(o => !o.is_current);
+
+    document.getElementById('drawerContent').innerHTML = `
+      <div style="margin-bottom:20px;">
+        <div class="section-header"><div class="section-title"><i class="ri-fingerprint-line" style="color:var(--accent);margin-right:6px;"></i>KYC Status</div></div>
+        <div style="display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg-hover);border-radius:10px;">
+          <span class="kyc-badge ${data.kyc_status}" style="font-size:.82rem;padding:5px 14px;">${capitalize(data.kyc_status)}</span>
+          <div style="font-size:.8rem;color:var(--text-muted);">${data.kyc_note || 'No note'}</div>
+        </div>
+        <div class="kyc-actions">
+          <button class="btn-kyc verify"  onclick="updateKyc('${id}','verified')"><i class="ri-check-line"></i> Mark Verified</button>
+          <button class="btn-kyc pending" onclick="updateKyc('${id}','pending')"><i class="ri-time-line"></i> Set Pending</button>
+          <button class="btn-kyc reject"  onclick="updateKyc('${id}','rejected')"><i class="ri-close-line"></i> Reject</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px;">
+        <div class="section-header"><div class="section-title"><i class="ri-car-line" style="color:var(--accent);margin-right:6px;"></i>Active Vehicles (${ownedVehicles.length})</div></div>
+        ${ownedVehicles.length ? ownedVehicles.map(ow => `
+        <div style="padding:12px 14px;background:var(--bg-hover);border-radius:8px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:.87rem;font-weight:600;font-family:'JetBrains Mono',monospace;">${ow.vehicle_id}</div>
+            <div style="font-size:.76rem;color:var(--text-muted);">${capitalize(ow.ownership_type)} · Since ${ow.from_date}</div>
+          </div>
+          <span class="tag ${(ow.vehicles?.status||'').toLowerCase()}">${ow.vehicles?.status || '—'}</span>
+        </div>`).join('') : '<div style="color:var(--text-muted);font-size:.82rem;padding:8px 0;">No active vehicles</div>'}
+      </div>
+
+      ${history.length ? `
+      <div>
+        <div class="section-header"><div class="section-title"><i class="ri-history-line" style="color:var(--accent);margin-right:6px;"></i>Past Ownerships</div></div>
+        <div class="timeline">
+          ${history.map(ow => `
+          <div class="timeline-item">
+            <div class="timeline-dot"><i class="ri-car-line"></i></div>
+            <div class="timeline-content">
+              <div class="tl-title">${ow.vehicle_id} — ${capitalize(ow.ownership_type)}</div>
+              <div class="tl-sub">${ow.from_date} → ${ow.to_date || 'now'} · ${ow.transfer_reason || ''}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+    `;
+  } catch(e) {
+    document.getElementById('drawerContent').innerHTML = `<div class="empty-placeholder"><i class="ri-error-warning-line"></i><p>Failed to load</p></div>`;
+  }
+}
+
+async function updateKyc(ownerId, status) {
+  const note = status === 'rejected' ? prompt('Rejection reason (optional):') || '' : '';
+  try {
+    const res = await fetch(`${API}/owners/${ownerId}/kyc`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ kyc_status: status, kyc_note: note }),
+    });
+    if (!res.ok) throw new Error('KYC update failed');
+    loadOwners();
+    openOwnerDrawer(ownerId);
+    loadStats();
+  } catch(e) { alert(e.message); }
+}
+
+function closeDrawer() {
+  document.getElementById('ownerDrawer').classList.remove('open');
+  document.getElementById('drawerOverlay').classList.remove('open');
+}
+
+/* ─── Policies ────────────────────────────────────────────────────────────── */
+async function loadPolicies() {
+  try {
+    const res = await fetch(`${API}/insurance`);
+    allPolicies = await res.json();
+    renderPolicies();
+  } catch(e) {
+    document.getElementById('policyTbody').innerHTML = `<tr class="loading-row"><td colspan="8">Failed to load policies</td></tr>`;
+  }
+}
+
+function filterPolicies()   { renderPolicies(); }
+function setPolicyStatus(s, btn) {
+  policyStatusFilter = s;
+  document.querySelectorAll('.policy-search-bar .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPolicies();
+}
+
+function renderPolicies() {
+  const q = (document.getElementById('policySearch').value || '').toLowerCase();
+  let list = allPolicies;
+  if (policyStatusFilter !== 'all') list = list.filter(p => p.status === policyStatusFilter);
+  if (q) list = list.filter(p =>
+    (p.vehicle_id    || '').toLowerCase().includes(q) ||
+    (p.provider      || '').toLowerCase().includes(q) ||
+    (p.policy_number || '').toLowerCase().includes(q)
+  );
+
+  const tbody = document.getElementById('policyTbody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="8">No policies found</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => {
+    const d  = p.days_remaining;
+    const riskColor = d === null || p.status !== 'active' ? 'var(--text-muted)' : d < 0 ? 'var(--red)' : d <= 7 ? 'var(--red)' : d <= 30 ? 'var(--amber)' : 'var(--green)';
+    const daysLabel = d === null ? '—' : d < 0 ? `Expired ${Math.abs(d)}d ago` : `${d}d`;
+    return `
+    <tr>
+      <td><span class="mono">${p.vehicle_id}</span></td>
+      <td style="font-weight:500;">${p.provider}</td>
+      <td><span class="mono">${p.policy_number}</span></td>
+      <td><span style="text-transform:capitalize;color:var(--text-secondary);">${(p.policy_type||'').replace('_',' ')}</span></td>
+      <td class="mono">${p.valid_until}</td>
+      <td style="color:${riskColor};font-weight:600;">${daysLabel}</td>
+      <td><span class="tag ${p.status}">${capitalize(p.status)}</span></td>
+      <td>
+        ${p.status === 'active' ? `<button class="icon-btn" title="Cancel" onclick="cancelPolicy('${p.id}')"><i class="ri-close-circle-line"></i></button>` : ''}
+        <button class="icon-btn" title="Delete" onclick="deletePolicy('${p.id}')"><i class="ri-delete-bin-line"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── Policy Modal ────────────────────────────────────────────────────────── */
+function openPolicyModal(vehicleId) {
+  document.getElementById('policyForm').reset();
+  if (vehicleId) document.getElementById('p_vehicle_id').value = vehicleId;
+  document.getElementById('p_valid_from').value  = new Date().toISOString().split('T')[0];
+  const nextYear = new Date(); nextYear.setFullYear(nextYear.getFullYear() + 1);
+  document.getElementById('p_valid_until').value = nextYear.toISOString().split('T')[0];
+  document.getElementById('policyModal').classList.add('open');
+}
+function closePolicyModal() { document.getElementById('policyModal').classList.remove('open'); }
+
+document.getElementById('policyForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = {
+    vehicle_id:    document.getElementById('p_vehicle_id').value.trim().toUpperCase(),
+    provider:      document.getElementById('p_provider').value.trim(),
+    policy_number: document.getElementById('p_policy_number').value.trim(),
+    policy_type:   document.getElementById('p_policy_type').value,
+    premium_amount:document.getElementById('p_premium').value || null,
+    valid_from:    document.getElementById('p_valid_from').value,
+    valid_until:   document.getElementById('p_valid_until').value,
+    nominee:       document.getElementById('p_nominee').value.trim() || null,
+    make_current:  true,
+  };
+  try {
+    const res = await fetch(`${API}/insurance`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Failed'); }
+    closePolicyModal();
+    loadPolicies();
+    loadStats();
+  } catch(err) { alert(err.message); }
+});
+
+async function cancelPolicy(id) {
+  if (!confirm('Cancel this policy?')) return;
+  await fetch(`${API}/insurance/${id}/status`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ status:'cancelled', reason:'Cancelled via dashboard' }) });
+  loadPolicies();
+}
+
+async function deletePolicy(id) {
+  if (!confirm('Permanently delete this policy?')) return;
+  await fetch(`${API}/insurance/${id}`, { method:'DELETE' });
+  loadPolicies();
+}
+
+/* ─── Utils ───────────────────────────────────────────────────────────────── */
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+</script>
+</body>
+</html>
