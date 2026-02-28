@@ -35,6 +35,11 @@ app.use((req, res, next) => {
   next();
 });
 
+/* ── Redirect old static path → canonical endpoint ── */
+app.get('/fleet_register.html', (_req, res) => {
+  res.redirect(301, '/fleet-register');
+});
+
 /* ── Dedicated page route — fleet-register is accessible ONLY via this endpoint ── */
 app.get('/fleet-register', (_req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'fleet_register.html'));
