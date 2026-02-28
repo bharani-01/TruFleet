@@ -13,6 +13,9 @@
     <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- TruFleet Theme (run first) -->
+    <script src="trufleet-theme.js"></script>
+
     <!-- TruFleet API Client -->
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
@@ -445,6 +448,17 @@
         .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
         .empty-state p { font-size: 1rem; font-weight: 500; }
 
+        /* ---- @media print ---- */
+        @media print {
+            .sidebar, .top-bar, .filter-strip, .drawer-overlay, .drawer, .modal-overlay,
+            .action-btn, #drawerOverlay, button, #notifPanel, #notifOverlay { display: none !important; }
+            .main-content { margin-left: 0 !important; }
+            .list-container { overflow: visible !important; box-shadow: none !important; }
+            .vehicle-row { page-break-inside: avoid; }
+            body { background: white !important; }
+            .vehicle-grid-header, .vehicle-row > div { padding: 6px 8px; }
+        }
+
     </style>
 </head>
 <body>
@@ -507,6 +521,7 @@
                 <h1>Fleet Registry</h1>
             </div>
             <div class="action-cluster">
+                <button class="btn btn-secondary" onclick="window.print()" title="Print fleet list"><i class="ri-printer-line"></i> Print</button>
                 <button class="btn btn-secondary"><i class="ri-download-line"></i> Export CSV</button>
                 <button class="btn btn-primary"><i class="ri-add-line"></i> Add Vehicle</button>
             </div>
@@ -592,6 +607,18 @@
                         <div class="ins-bar-fill" id="drawerInsBar" style="width: 0%; background: #10B981;"></div>
                     </div>
                     <div style="font-size: 0.8rem; margin-top: 8px; text-align: right;">Expires: <strong id="drawerExpiry">—</strong></div>
+                </div>
+            </div>
+
+            <!-- QR Code -->
+            <div class="drawer-section">
+                <div class="section-label">Vehicle QR Code</div>
+                <div style="display:flex;align-items:center;gap:1.25rem;padding:0.5rem 0;">
+                    <img id="drawerQrCode" src="" alt="QR Code" style="width:96px;height:96px;border:1px solid #E2E8F0;border-radius:8px;background:#F8FAFC;">
+                    <div>
+                        <p style="font-size:0.82rem;color:#64748B;margin-bottom:0.75rem;line-height:1.5;">Scan to view vehicle details, insurance status and dispatch history.</p>
+                        <a id="drawerQrDownload" href="#" download="trufleet-qr.png" target="_blank" style="font-size:0.85rem;color:#3B82F6;font-weight:600;text-decoration:none;"><i class="ri-download-line"></i> Download QR</a>
+                    </div>
                 </div>
             </div>
 
@@ -1109,6 +1136,14 @@
             document.getElementById('drawerInsBar').style.width = TruFleet.insuranceHealthPct(exp) + '%';
             document.getElementById('drawerInsBar').style.background = colorMap[rc];
             document.getElementById('drawerExpiry').textContent = TruFleet.fmtDate(exp);
+
+            // QR Code
+            const plate = v.id || vehicleId;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent('TruFleet Vehicle: ' + plate)}&size=120x120&margin=8`;
+            const qrImg = document.getElementById('drawerQrCode');
+            if (qrImg) { qrImg.src = qrUrl; }
+            const qrLink = document.getElementById('drawerQrDownload');
+            if (qrLink) { qrLink.href = qrUrl; qrLink.download = 'trufleet-qr-' + plate + '.png'; }
 
             const blockBtn = document.getElementById('drawerBlockBtn');
             if (isBlocked) {

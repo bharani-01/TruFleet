@@ -13,6 +13,9 @@
     <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- TruFleet Theme (run first) -->
+    <script src="trufleet-theme.js"></script>
+
     <!-- TruFleet API Client -->
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
@@ -397,7 +400,21 @@
                     <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;"></i>
                     <input id="auditSearch" type="text" placeholder="Search Entity ID or description..." style="padding: 10px 10px 10px 36px; border: 1px solid #E2E8F0; border-radius: 8px; font-family: 'Inter'; width: 250px;">
                 </div>
-                <button class="btn-filter" id="filterTypeBtn"><i class="ri-filter-3-line"></i> Filter</button>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-size:0.8rem;color:#94A3B8;font-weight:600;">From</span>
+                    <input id="dateFrom" type="date" onchange="applyDateFilter()" style="padding:8px 10px;border:1px solid #E2E8F0;border-radius:8px;font-family:'Inter';font-size:0.85rem;color:#0F172A;">
+                    <span style="font-size:0.8rem;color:#94A3B8;font-weight:600;">To</span>
+                    <input id="dateTo" type="date" onchange="applyDateFilter()" style="padding:8px 10px;border:1px solid #E2E8F0;border-radius:8px;font-family:'Inter';font-size:0.85rem;color:#0F172A;">
+                </div>
+                <select id="filterTypeSelect" onchange="applyTypeFilter(this.value)" style="padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-family:'Inter';font-size:0.9rem;color:#64748B;cursor:pointer;background:white;">
+                    <option value="ALL">All Types</option>
+                    <option value="AUTH">AUTH</option>
+                    <option value="ADMIN">ADMIN</option>
+                    <option value="SYSTEM">SYSTEM</option>
+                    <option value="CREATE">CREATE</option>
+                    <option value="UPDATE">UPDATE</option>
+                    <option value="DELETE">DELETE</option>
+                </select>
                 <button class="btn-filter" id="exportLogsBtn"><i class="ri-download-line"></i> Export</button>
             </div>
         </div>
@@ -426,6 +443,8 @@
         /* ── State ── */
         let auditFilter = 'ALL';
         let auditSearch = '';
+        let auditDateFrom = '';
+        let auditDateTo   = '';
         let allLogs = [];
         let isLive = false;
         let liveInterval;
@@ -490,6 +509,20 @@
                     (l.detail||'').toLowerCase().includes(q)
                 );
             }
+            if (auditDateFrom) {
+                const from = new Date(auditDateFrom).getTime();
+                result = result.filter(l => {
+                    const ts = l.created_at || l.timestamp;
+                    return ts && new Date(ts).getTime() >= from;
+                });
+            }
+            if (auditDateTo) {
+                const to = new Date(auditDateTo + 'T23:59:59').getTime();
+                result = result.filter(l => {
+                    const ts = l.created_at || l.timestamp;
+                    return ts && new Date(ts).getTime() <= to;
+                });
+            }
             return result;
         }
 
@@ -523,15 +556,18 @@
             renderFeed();
         });
 
-        /* ── Filter button cycles through types ── */
-        const FILTER_CYCLE = ['ALL','AUTH','ADMIN','SYSTEM'];
-        let filterIdx = 0;
-        document.getElementById('filterTypeBtn').addEventListener('click', function () {
-            filterIdx = (filterIdx + 1) % FILTER_CYCLE.length;
-            auditFilter = FILTER_CYCLE[filterIdx];
-            this.textContent = '\u25BC ' + (auditFilter === 'ALL' ? 'All Types' : auditFilter);
+        /* ── Type Filter (dropdown) ── */
+        function applyTypeFilter(val) {
+            auditFilter = val || 'ALL';
             renderFeed();
-        });
+        }
+
+        /* ── Date Range Filter ── */
+        function applyDateFilter() {
+            auditDateFrom = document.getElementById('dateFrom').value;
+            auditDateTo   = document.getElementById('dateTo').value;
+            renderFeed();
+        }
 
         /* ── Export CSV ── */
         document.getElementById('exportLogsBtn').addEventListener('click', function () {

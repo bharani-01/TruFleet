@@ -13,6 +13,9 @@
     <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- TruFleet Theme (run first) -->
+    <script src="trufleet-theme.js"></script>
+
     <!-- TruFleet API Client -->
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
@@ -493,11 +496,17 @@
             </div>
             
             <div class="header-actions">
+                <div id="last-refresh-badge" style="font-size:0.8rem;color:#94A3B8;display:flex;align-items:center;gap:5px;white-space:nowrap;">
+                    <i class="ri-time-line"></i><span id="last-refresh-text">Loading…</span>
+                </div>
+                <button id="refreshBtn" onclick="manualRefresh()" title="Refresh data" style="background:none;border:1px solid #E2E8F0;border-radius:8px;width:36px;height:36px;cursor:pointer;color:#64748B;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">
+                    <i class="ri-refresh-line" style="font-size:1.1rem;"></i>
+                </button>
                 <div class="search-bar">
                     <i class="ri-search-line" style="color: #94A3B8;"></i>
                     <input type="text" placeholder="Search vehicle, policy, or ID...">
                 </div>
-                
+
                 <button style="position: relative; background: none; border: none; cursor: pointer;">
                     <i class="ri-notification-3-line" style="font-size: 1.25rem;"></i>
                     <span style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: var(--accent-danger); border-radius: 50%;"></span>
@@ -616,84 +625,99 @@
     </main>
 
     <script>
+        /* ── State ── */
+        let complianceChartInstance = null;
+        let _refreshing = false;
+
+        function setLastRefreshed() {
+            const now = new Date();
+            const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const el = document.getElementById('last-refresh-text');
+            if (el) el.textContent = 'Updated ' + time;
+        }
+
+        /* ── Refresh: KPIs + Live Feed + Compliance chart data ── */
+        async function refreshDashboard() {
+            if (_refreshing) return;
+            _refreshing = true;
+            const btn = document.getElementById('refreshBtn');
+            if (btn) btn.style.animation = 'spin 0.6s linear';
+
+            /* KPIs */
+            let kpis = {};
+            try { kpis = await TruFleet.getKPIs(); } catch (e) { console.warn('KPI fetch failed', e); }
+            document.getElementById('kpi-total').textContent   = (kpis.total   || 0).toLocaleString();
+            document.getElementById('kpi-active').textContent  = (kpis.active  || 0).toLocaleString();
+            document.getElementById('kpi-risk').textContent    = (kpis.expiring || 0);
+            document.getElementById('kpi-blocked').textContent = (kpis.blocked || 0);
+            const utilPct   = kpis.utilPct  || 0;
+            const riskCount = kpis.expiring || 0;
+            const blocked   = kpis.blocked  || 0;
+            document.getElementById('kpi-active-trend').innerHTML = '<i class="ri-arrow-up-line"></i> ' + utilPct + '% utilization';
+            document.getElementById('kpi-risk-label').textContent = riskCount === 1 ? '1 vehicle expiring soon' : riskCount + ' vehicles expiring in \u2264 7 days';
+            document.getElementById('kpi-blocked-label').textContent = blocked + (blocked === 1 ? ' vehicle blocked' : ' vehicles blocked');
+
+            /* Live feed */
+            const statusMap = {
+                AUTHORIZED: '<span class="status-pill status-success"><i class="ri-check-line"></i> AUTHORIZED</span>',
+                DENIED: '<span class="status-pill status-error"><i class="ri-close-line"></i> DENIED</span>',
+                WARNING: '<span class="status-pill status-warning"><i class="ri-error-warning-line"></i> WARNING</span>',
+                SUCCESS: '<span class="status-pill status-success"><i class="ri-check-line"></i> SUCCESS</span>',
+                COMPLETE: '<span class="status-pill status-success"><i class="ri-check-line"></i> COMPLETE</span>',
+            };
+            let logs = [];
+            try { logs = await TruFleet.getLogs({ limit: 8 }); } catch (e) { console.warn('Log fetch failed', e); }
+            const tbody = document.getElementById('live-feed-tbody');
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem;">No log entries yet.</td></tr>';
+            } else {
+                tbody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td>${TruFleet.fmtTime(log.timestamp || log.created_at)}</td>
+                        <td class="id-cell">${log.entity_id || log.entityId || '\u2014'}</td>
+                        <td>${log.description || '\u2014'}</td>
+                        <td>${statusMap[log.status] || '<span class="status-pill status-warning">' + (log.status||'') + '</span>'}</td>
+                        <td>${log.detail || '\u2014'}</td>
+                    </tr>
+                `).join('');
+            }
+
+            /* Compliance Doughnut update */
+            let vehicles = [];
+            try { vehicles = await TruFleet.getVehicles(); } catch (e) { console.warn('Vehicle fetch failed', e); }
+            const compliant = vehicles.filter(v => TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry) > 7).length;
+            const warning   = vehicles.filter(v => { const d = TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry); return d >= 0 && d <= 7; }).length;
+            const nonComp   = vehicles.filter(v => TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry) < 0).length;
+            const total     = vehicles.length || 1;
+            const pct       = Math.round((compliant / total) * 100);
+            const compText  = document.getElementById('compliance-text');
+            if (compText) compText.textContent = pct + '% of fleet is fully compliant';
+            if (complianceChartInstance) {
+                complianceChartInstance.data.datasets[0].data = [compliant, warning, nonComp];
+                complianceChartInstance.update();
+            }
+
+            setLastRefreshed();
+            if (btn) btn.style.animation = '';
+            _refreshing = false;
+        }
+
+        async function manualRefresh() {
+            await refreshDashboard();
+        }
+
         /* ── Boot ── */
         (async function init() {
 
-        /* ── User ── */
+        /* User */
         const user = TruFleet.getCurrentUser();
         const headerEl = document.getElementById('header-username');
-        if (headerEl) headerEl.textContent = 'Welcome back, ' + user.name;
+        if (headerEl) headerEl.textContent = 'Welcome back, ' + (user ? user.name : 'Admin');
         const av = document.querySelector('.avatar');
-        if (av) av.textContent = user.initials || 'CO';
+        if (av) av.textContent = (user && user.initials) ? user.initials : 'CO';
 
-        /* ── KPIs from API ── */
-        let kpis = {};
-        try {
-            kpis = await TruFleet.getKPIs();
-        } catch (e) {
-            console.warn('KPI fetch failed, using empty state', e);
-        }
-        document.getElementById('kpi-total').textContent   = (kpis.total   || 0).toLocaleString();
-        document.getElementById('kpi-active').textContent  = (kpis.active  || 0).toLocaleString();
-        document.getElementById('kpi-risk').textContent    = (kpis.expiring || 0);
-        document.getElementById('kpi-blocked').textContent = (kpis.blocked || 0);
-
-        const utilPct = kpis.utilPct || 0;
-        const riskCount = kpis.expiring || 0;
-        const blocked   = kpis.blocked  || 0;
-        document.getElementById('kpi-active-trend').innerHTML =
-            '<i class="ri-arrow-up-line"></i> ' + utilPct + '% utilization';
-        document.getElementById('kpi-risk-label').textContent =
-            riskCount === 1 ? '1 vehicle expiring soon' : riskCount + ' vehicles expiring in ≤ 7 days';
-        document.getElementById('kpi-blocked-label').textContent =
-            blocked + (blocked === 1 ? ' vehicle blocked' : ' vehicles blocked');
-
-        /* ── Live feed table ── */
-        const statusMap = {
-            AUTHORIZED: '<span class="status-pill status-success"><i class="ri-check-line"></i> AUTHORIZED</span>',
-            DENIED: '<span class="status-pill status-error"><i class="ri-close-line"></i> DENIED</span>',
-            WARNING: '<span class="status-pill status-warning"><i class="ri-error-warning-line"></i> WARNING</span>',
-            SUCCESS: '<span class="status-pill status-success"><i class="ri-check-line"></i> SUCCESS</span>',
-            COMPLETE: '<span class="status-pill status-success"><i class="ri-check-line"></i> COMPLETE</span>',
-        };
-        let logs = [];
-        try { logs = await TruFleet.getLogs({ limit: 8 }); } catch (e) { console.warn('Log fetch failed', e); }
-        const tbody = document.getElementById('live-feed-tbody');
-        if (logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem;">No log entries yet.</td></tr>';
-        } else {
-            tbody.innerHTML = logs.map(log => `
-                <tr>
-                    <td>${TruFleet.fmtTime(log.timestamp || log.created_at)}</td>
-                    <td class="id-cell">${log.entity_id || log.entityId || '—'}</td>
-                    <td>${log.description || '—'}</td>
-                    <td>${statusMap[log.status] || '<span class="status-pill status-warning">' + (log.status||'') + '</span>'}</td>
-                    <td>${log.detail || '—'}</td>
-                </tr>
-            `).join('');
-        }
-
-        /* ── Compliance Doughnut ── */
-        let vehicles = [];
-        try { vehicles = await TruFleet.getVehicles(); } catch (e) { console.warn('Vehicle fetch failed', e); }
-        const compliant = vehicles.filter(v => TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry) > 7).length;
-        const warning   = vehicles.filter(v => { const d = TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry); return d >= 0 && d <= 7; }).length;
-        const nonComp   = vehicles.filter(v => TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry) < 0).length;
-        const total     = vehicles.length || 1;
-        const pct       = Math.round((compliant / total) * 100);
-
-        const compText = document.getElementById('compliance-text');
-        if (compText) compText.textContent = pct + '% of fleet is fully compliant';
-
-        const ctxCompliance = document.getElementById('complianceChart').getContext('2d');
-        new Chart(ctxCompliance, {
-            type: 'doughnut',
-            data: {
-                labels: ['Compliant', 'Warning (Expiring)', 'Non-Compliant'],
-                datasets: [{ data: [compliant, warning, nonComp], backgroundColor: ['#0F172A', '#F59E0B', '#EF4444'], borderWidth: 0, hoverOffset: 4 }]
-            },
-            options: { responsive: true, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
-        });
+        /* First data load */
+        await refreshDashboard();
 
         /* ── Animations ── */
         gsap.from('.gs-fade', { y: 30, duration: 0.8, stagger: 0.1, ease: 'power3.out' });
@@ -761,6 +785,19 @@
             }
         });
 
+        /* ── Compliance Doughnut (initial) ── */
+        const ctxCompliance = document.getElementById('complianceChart').getContext('2d');
+        complianceChartInstance = new Chart(ctxCompliance, {
+            type: 'doughnut',
+            data: {
+                labels: ['Compliant', 'Warning (Expiring)', 'Non-Compliant'],
+                datasets: [{ data: [0, 0, 0], backgroundColor: ['#0F172A', '#F59E0B', '#EF4444'], borderWidth: 0, hoverOffset: 4 }]
+            },
+            options: { responsive: true, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+        });
+        // Trigger first compliance data load
+        await refreshDashboard();
+
         document.getElementById('dispatch-timeframe').addEventListener('change', function () {
             const d = CHART_DATA[this.value];
             dispatchChart.data.labels = d.labels;
@@ -769,7 +806,15 @@
             dispatchChart.update('active');
         });
 
+        /* ── Auto-Refresh every 60 seconds ── */
+        setInterval(refreshDashboard, 60000);
+
         })(); // end async init
+
+        /* Spin keyframe for refresh button */
+        const refreshStyle = document.createElement('style');
+        refreshStyle.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+        document.head.appendChild(refreshStyle);
     </script>
 </body>
 </html>

@@ -13,6 +13,9 @@
     <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- TruFleet Theme (run first) -->
+    <script src="trufleet-theme.js"></script>
+
     <!-- TruFleet API Client -->
     <script src="trufleet-api.js"></script>
     <script src="auth-check.js"></script>
@@ -289,7 +292,17 @@
         .btn-danger { background: white; border: 1px solid #EF4444; color: #EF4444; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
         .btn-danger:hover { background: #EF4444; color: white; }
 
+        /* Accent Swatch */
+        .accent-swatch {
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; outline: 3px solid transparent;
+            transition: transform 0.2s, outline-color 0.2s;
+        }
+        .accent-swatch:hover { transform: scale(1.15); }
+        .accent-swatch.selected { outline-color: currentColor; transform: scale(1.15); box-shadow: 0 0 0 2px white inset; }
+
         /* Team List */
+
         .team-row {
             display: flex; justify-content: space-between; align-items: center;
             padding: 1rem 0; border-bottom: 1px solid #F1F5F9;
@@ -349,6 +362,7 @@
                 <div class="nav-section-label">General</div>
                 <a onclick="scrollToSection('profile')" class="settings-link active">Company Profile</a>
                 <a onclick="scrollToSection('team')" class="settings-link">Team Members</a>
+                <a onclick="scrollToSection('appearance')" class="settings-link">Appearance</a>
                 
                 <div class="nav-section-label">System</div>
                 <a onclick="scrollToSection('security')" class="settings-link">Security & Auth</a>
@@ -358,6 +372,44 @@
 
             <!-- PANEL -->
             <div class="settings-panel">
+
+                <!-- SECTION: APPEARANCE -->
+                <div id="appearance" class="settings-section">
+                    <div class="section-header">
+                        <h2>Appearance</h2>
+                        <p>Customize the look and feel of the TruFleet interface.</p>
+                    </div>
+                    <div class="card gs-fade">
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Dark Mode</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Switch to a dark color scheme for low-light environments.</p>
+                            </div>
+                            <div id="darkModeToggle" class="toggle-switch" onclick="toggleDarkMode(this)"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Compact Density</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Use tighter spacing and smaller type for data-dense views.</p>
+                            </div>
+                            <div id="compactToggle" class="toggle-switch" onclick="toggleCompact(this)"></div>
+                        </div>
+                    </div>
+                    <div class="card gs-fade">
+                        <div style="margin-bottom: 1rem;">
+                            <h4 style="font-size: 0.95rem; margin-bottom: 0.3rem;">Accent Color</h4>
+                            <p style="font-size: 0.875rem; color: var(--text-secondary);">Applied to buttons, links and active states across the app.</p>
+                        </div>
+                        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                            <div onclick="setAccent('#3B82F6',this)" class="accent-swatch" data-color="#3B82F6" style="background:#3B82F6;"></div>
+                            <div onclick="setAccent('#8B5CF6',this)" class="accent-swatch" data-color="#8B5CF6" style="background:#8B5CF6;"></div>
+                            <div onclick="setAccent('#10B981',this)" class="accent-swatch" data-color="#10B981" style="background:#10B981;"></div>
+                            <div onclick="setAccent('#F59E0B',this)" class="accent-swatch" data-color="#F59E0B" style="background:#F59E0B;"></div>
+                            <div onclick="setAccent('#EF4444',this)" class="accent-swatch" data-color="#EF4444" style="background:#EF4444;"></div>
+                            <div onclick="setAccent('#06B6D4',this)" class="accent-swatch" data-color="#06B6D4" style="background:#06B6D4;"></div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- SECTION: PROFILE -->
                 <div id="profile" class="settings-section">
@@ -464,6 +516,57 @@
                     </div>
                 </div>
 
+                <!-- SECTION: NOTIFICATIONS -->
+                <div id="notifications" class="settings-section">
+                    <div class="section-header">
+                        <h2>Notification Preferences</h2>
+                        <p>Choose which events trigger alerts and how you receive them.</p>
+                    </div>
+                    <div class="card gs-fade">
+                        <div style="margin-bottom:1rem;font-size:0.8rem;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;">Alert Types</div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Insurance Expiry Alerts</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Notify 30, 14 and 7 days before any policy expires.</p>
+                            </div>
+                            <div id="notif-insurance" class="toggle-switch active" onclick="saveNotifPref('insurance',this)"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Vehicle Status Changes</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Alert when a vehicle is blocked or activated.</p>
+                            </div>
+                            <div id="notif-status" class="toggle-switch active" onclick="saveNotifPref('status',this)"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Audit Log Events</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">In-app alerts for CREATE, UPDATE and DELETE operations.</p>
+                            </div>
+                            <div id="notif-audit" class="toggle-switch" onclick="saveNotifPref('audit',this)"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Login Notifications</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Alert on new sign-ins from unrecognized devices.</p>
+                            </div>
+                            <div id="notif-login" class="toggle-switch active" onclick="saveNotifPref('login',this)"></div>
+                        </div>
+                    </div>
+                    <div class="card gs-fade">
+                        <div style="margin-bottom:1rem;font-size:0.8rem;font-weight:700;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.08em;">Delivery Frequency</div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Email Digest</label>
+                            <select class="input-field" id="notif-digest" onchange="saveDigestPref(this.value)">
+                                <option value="realtime">Real-time (Immediate)</option>
+                                <option value="daily">Daily Summary</option>
+                                <option value="weekly">Weekly Report</option>
+                                <option value="never">Never</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- SECTION: TEAM -->
                 <div id="team" class="settings-section">
                     <div class="section-header">
@@ -512,26 +615,92 @@
     </main>
 
     <script>
-        // Animation
+        // ── Animation
         gsap.registerPlugin(ScrollToPlugin);
+        gsap.from('.gs-fade', { y: 30, duration: 0.8, stagger: 0.1, ease: 'power3.out' });
 
-        gsap.from(".gs-fade", {
-            y: 30, duration: 0.8, stagger: 0.1, ease: "power3.out"
-        });
-
-        // Scroll Navigation Logic
+        // ── Scroll Navigation
         function scrollToSection(id) {
-            // UI Update
             document.querySelectorAll('.settings-link').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
-
-            // Scroll
             gsap.to('.settings-panel', {
                 duration: 0.8,
-                scrollTo: { y: `#${id}`, offsetY: 20 },
-                ease: "power3.inOut"
+                scrollTo: { y: '#' + id, offsetY: 20 },
+                ease: 'power3.inOut'
             });
         }
+
+        // ── Dark Mode Toggle
+        function toggleDarkMode(el) {
+            const isDark = TruFleetTheme.toggle();
+            el.classList.toggle('active', isDark);
+        }
+
+        // ── Compact mode
+        function toggleCompact(el) {
+            el.classList.toggle('active');
+            const compact = el.classList.contains('active');
+            localStorage.setItem('trufleet_compact', compact ? '1' : '0');
+            document.body.style.fontSize = compact ? '0.92em' : '';
+        }
+
+        // ── Accent Color
+        function setAccent(color, el) {
+            document.querySelectorAll('.accent-swatch').forEach(s => s.classList.remove('selected'));
+            el.classList.add('selected');
+            localStorage.setItem('trufleet_accent', color);
+            document.documentElement.style.setProperty('--accent-blue', color);
+            document.documentElement.style.setProperty('--accent-indigo', color);
+        }
+
+        // ── Notification Preferences
+        function saveNotifPref(key, el) {
+            el.classList.toggle('active');
+            const prefs = JSON.parse(localStorage.getItem('trufleet_notif_prefs') || '{}');
+            prefs[key] = el.classList.contains('active');
+            localStorage.setItem('trufleet_notif_prefs', JSON.stringify(prefs));
+        }
+        function saveDigestPref(val) {
+            const prefs = JSON.parse(localStorage.getItem('trufleet_notif_prefs') || '{}');
+            prefs.digest = val;
+            localStorage.setItem('trufleet_notif_prefs', JSON.stringify(prefs));
+        }
+
+        // ── On Init: restore saved states
+        (function init() {
+            // Dark mode
+            const dmToggle = document.getElementById('darkModeToggle');
+            if (TruFleetTheme.isDark()) dmToggle.classList.add('active');
+
+            // Compact
+            const compact = localStorage.getItem('trufleet_compact') === '1';
+            if (compact) {
+                document.getElementById('compactToggle').classList.add('active');
+                document.body.style.fontSize = '0.92em';
+            }
+
+            // Accent
+            const accent = localStorage.getItem('trufleet_accent');
+            if (accent) {
+                document.documentElement.style.setProperty('--accent-blue', accent);
+                document.documentElement.style.setProperty('--accent-indigo', accent);
+                const found = document.querySelector(`.accent-swatch[data-color="${accent}"]`);
+                if (found) found.classList.add('selected');
+            } else {
+                const def = document.querySelector('.accent-swatch[data-color="#3B82F6"]');
+                if (def) def.classList.add('selected');
+            }
+
+            // Notif prefs
+            const prefs = JSON.parse(localStorage.getItem('trufleet_notif_prefs') || '{}');
+            ['insurance','status','audit','login'].forEach(k => {
+                const el = document.getElementById('notif-' + k);
+                if (!el) return;
+                if (k in prefs) el.classList.toggle('active', prefs[k]);
+            });
+            const digestEl = document.getElementById('notif-digest');
+            if (digestEl && prefs.digest) digestEl.value = prefs.digest;
+        })();
     </script>
 </body>
 </html>

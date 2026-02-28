@@ -13,6 +13,9 @@
     <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- TruFleet Theme (run first) -->
+    <script src="trufleet-theme.js"></script>
+
     <!-- TruFleet API Client -->
     <script src="trufleet-api.js"></script>
     <script src="auth-check.js"></script>
@@ -349,9 +352,15 @@
             
             <!-- LEFT: IDENTITY CARD -->
             <div class="id-card gs-fade">
-                <div class="profile-image-container">
-                    <div class="profile-img">CO</div>
+                <div class="profile-image-container" onclick="document.getElementById('avatarInput').click()" style="cursor:pointer;" title="Click to update profile photo">
+                    <div class="profile-img" id="profileImgEl" style="background-size:cover;background-position:center;">
+                        <span id="profileInitials">CO</span>
+                    </div>
                     <div class="verified-badge"><i class="ri-check-line"></i></div>
+                    <div style="position:absolute;bottom:4px;right:4px;width:30px;height:30px;background:#3B82F6;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;z-index:1;">
+                        <i class="ri-camera-line" style="color:white;font-size:0.8rem;"></i>
+                    </div>
+                    <input type="file" id="avatarInput" accept="image/*" style="display:none;" onchange="handleAvatarChange(this)">
                 </div>
                 <h1 class="user-name">Chief Officer</h1>
                 <div class="user-role">Global Fleet Administrator</div>
@@ -384,25 +393,25 @@
                             <h3>Personal Information</h3>
                             <p>Update your photo and personal details here.</p>
                         </div>
-                        <button class="btn-primary">Save Changes</button>
+                        <button class="btn-primary" onclick="saveProfileInfo()">Save Changes</button>
                     </div>
 
                     <div class="form-grid">
                         <div class="form-group">
                             <label>First Name</label>
-                            <input type="text" class="input-field" value="Chief">
+                            <input type="text" id="acctFirstName" class="input-field" placeholder="First name">
                         </div>
                         <div class="form-group">
                             <label>Last Name</label>
-                            <input type="text" class="input-field" value="Officer">
+                            <input type="text" id="acctLastName" class="input-field" placeholder="Last name">
                         </div>
                         <div class="form-group">
                             <label>Email Address</label>
-                            <input type="email" class="input-field" value="admin@trufleet.io">
+                            <input type="email" id="acctEmail" class="input-field" placeholder="Email address">
                         </div>
                         <div class="form-group">
                             <label>Phone Number</label>
-                            <input type="text" class="input-field" value="+1 (555) 012-3456">
+                            <input type="text" id="acctPhone" class="input-field" placeholder="+1 (555) 000-0000">
                         </div>
                     </div>
                 </div>
@@ -467,20 +476,21 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Current Password</label>
-                            <input type="password" class="input-field" placeholder="••••••••••••">
+                            <input type="password" id="currentPwd" class="input-field" placeholder="••••••••••••">
                         </div>
-                        <div></div> <!-- Spacer -->
+                        <div></div>
                         <div class="form-group">
                             <label>New Password</label>
-                            <input type="password" class="input-field">
+                            <input type="password" id="newPwd" class="input-field">
                         </div>
-                         <div class="form-group">
+                        <div class="form-group">
                             <label>Confirm New Password</label>
-                            <input type="password" class="input-field">
+                            <input type="password" id="confirmPwd" class="input-field">
                         </div>
                     </div>
+                    <div id="pwdMsg" style="margin-top:0.75rem;font-size:0.85rem;display:none;"></div>
                     <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
-                        <button class="btn-primary" style="background: white; color: var(--text-primary); border: 1px solid var(--border-light);">Update Password</button>
+                        <button id="updatePwdBtn" onclick="changePassword()" class="btn-primary" style="background: white; color: var(--text-primary); border: 1px solid var(--border-light);">Update Password</button>
                     </div>
                  </div>
 
@@ -508,14 +518,129 @@
     </main>
 
     <script>
-        // Animations
-        gsap.from(".gs-fade", {
-            y: 30,
-            duration: 0.8,
-            stagger: 0.15,
-            ease: "power3.out",
-            delay: 0.2
-        });
+        /* ── Animations ── */
+        gsap.from('.gs-fade', { y: 30, duration: 0.8, stagger: 0.15, ease: 'power3.out', delay: 0.2 });
+
+        /* ── Load user data from session ── */
+        (function loadUser() {
+            const user = TruFleet.getCurrentUser();
+            if (!user) return;
+
+            const nameParts = (user.name || 'Chief Officer').split(' ');
+            document.getElementById('acctFirstName').value = nameParts[0] || '';
+            document.getElementById('acctLastName').value  = nameParts.slice(1).join(' ') || '';
+            document.getElementById('acctEmail').value     = user.email || '';
+
+            const nameEl = document.querySelector('.user-name');
+            const roleEl = document.querySelector('.user-role');
+            if (nameEl) nameEl.textContent = user.name || 'Chief Officer';
+            if (roleEl) roleEl.textContent = user.role || 'Fleet Administrator';
+
+            const initials = (user.initials ||
+                (user.name || 'CO').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2));
+            const profileEl = document.getElementById('profileImgEl');
+            const initialsEl = document.getElementById('profileInitials');
+            if (initialsEl) initialsEl.textContent = initials;
+
+            // Load saved avatar
+            const savedAvatar = localStorage.getItem('trufleet_avatar');
+            if (savedAvatar && profileEl) {
+                profileEl.style.backgroundImage = `url('${savedAvatar}')`;
+                if (initialsEl) initialsEl.style.opacity = '0';
+            }
+        })();
+
+        /* ── Profile photo upload ── */
+        function handleAvatarChange(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { alert('Image too large — max 2 MB'); input.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const b64 = e.target.result;
+                localStorage.setItem('trufleet_avatar', b64);
+                const profileEl = document.getElementById('profileImgEl');
+                const initialsEl = document.getElementById('profileInitials');
+                if (profileEl) { profileEl.style.backgroundImage = `url('${b64}')`; }
+                if (initialsEl) { initialsEl.style.opacity = '0'; }
+                // Flash confirmation
+                const cam = document.querySelector('.profile-image-container [style*="#3B82F6"]');
+                if (cam) { cam.style.background = '#10B981'; setTimeout(() => cam.style.background = '#3B82F6', 1500); }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        /* ── Save profile info ── */
+        function saveProfileInfo() {
+            const firstName = document.getElementById('acctFirstName').value.trim();
+            const lastName  = document.getElementById('acctLastName').value.trim();
+            const email     = document.getElementById('acctEmail').value.trim();
+            if (!firstName) { alert('First name is required.'); return; }
+            const session = JSON.parse(localStorage.getItem('trufleet_user') || '{}');
+            session.name  = (firstName + ' ' + lastName).trim();
+            session.email = email;
+            session.initials = (firstName[0] + (lastName[0]||'')).toUpperCase();
+            localStorage.setItem('trufleet_user', JSON.stringify(session));
+            // Update display
+            const nameEl = document.querySelector('.user-name');
+            if (nameEl) nameEl.textContent = session.name;
+            const initialsEl = document.getElementById('profileInitials');
+            if (initialsEl) initialsEl.textContent = session.initials;
+            // Flash button
+            const btn = event.target;
+            const orig = btn.textContent;
+            btn.textContent = '✓ Saved!';
+            btn.style.background = '#10B981';
+            btn.style.color = 'white';
+            setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 2500);
+        }
+
+        /* ── Password change ── */
+        function changePassword() {
+            const current = document.getElementById('currentPwd').value;
+            const newPwd  = document.getElementById('newPwd').value;
+            const confirm = document.getElementById('confirmPwd').value;
+            const btn     = document.getElementById('updatePwdBtn');
+            const msg     = document.getElementById('pwdMsg');
+
+            function showMsg(text, ok) {
+                msg.style.display = 'block';
+                msg.textContent = text;
+                msg.style.color = ok ? '#059669' : '#DC2626';
+                msg.style.background = ok ? '#ECFDF5' : '#FEF2F2';
+                msg.style.padding = '8px 12px';
+                msg.style.borderRadius = '6px';
+            }
+
+            if (!current || !newPwd || !confirm) { showMsg('All fields are required.', false); return; }
+            if (newPwd.length < 6) { showMsg('New password must be at least 6 characters.', false); return; }
+            if (newPwd !== confirm) { showMsg('New passwords do not match.', false); return; }
+
+            // Verify current password against stored session
+            const session = JSON.parse(localStorage.getItem('trufleet_user') || '{}');
+            const storedPwd = session.password || 'admin123';
+            if (current !== storedPwd) { showMsg('Current password is incorrect.', false); return; }
+
+            // Save new password
+            session.password = newPwd;
+            localStorage.setItem('trufleet_user', JSON.stringify(session));
+
+            // Reset fields
+            document.getElementById('currentPwd').value = '';
+            document.getElementById('newPwd').value = '';
+            document.getElementById('confirmPwd').value = '';
+
+            showMsg('✓ Password updated successfully!', true);
+            btn.style.background = '#10B981';
+            btn.style.color = 'white';
+            btn.textContent = 'Password Updated!';
+            setTimeout(() => {
+                btn.style.background = 'white';
+                btn.style.color = 'var(--text-primary)';
+                btn.textContent = 'Update Password';
+                msg.style.display = 'none';
+            }, 3000);
+        }
     </script>
 </body>
 </html>

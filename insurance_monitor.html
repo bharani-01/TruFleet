@@ -13,10 +13,16 @@
     <!-- Icons -->
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
 
+    <!-- TruFleet Theme (run first) -->
+    <script src="trufleet-theme.js"></script>
+
     <!-- TruFleet API Client -->
     <script src="trufleet-api.js"></script>
     <script src="trufleet-notif.js"></script>
     <script src="auth-check.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
     <!-- GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
@@ -297,7 +303,29 @@
             border: 1px solid var(--risk-crit);
         }
 
-        /* --- RENEWAL MODAL (Glassmorphism) --- */
+        /* ---  Timeline Section --- */
+        .timeline-section {
+            padding: 0 2.5rem 1.5rem;
+            display: none;
+        }
+        .timeline-section.visible { display: block; }
+        .timeline-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem 2rem;
+            border: 1px solid #E2E8F0;
+            box-shadow: var(--shadow-card);
+        }
+        .timeline-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .timeline-header h3 {
+            font-family: 'Manrope'; font-size: 1.1rem; font-weight: 700;
+        }
+
+        /* Modal Overlay */
+
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: transparent;
@@ -392,9 +420,25 @@
                 <h1>Insurance Monitor</h1>
             </div>
             <div class="header-actions">
+                <button class="btn-upload" id="timelineToggleBtn" onclick="toggleTimeline()" style="background: white; color: var(--text-primary); border: 1px solid #E2E8F0; box-shadow: none;">
+                    <i class="ri-bar-chart-horizontal-line"></i> Timeline
+                </button>
                 <button class="btn-upload" onclick="openModal()">
                     <i class="ri-upload-cloud-2-line"></i> New Policy
                 </button>
+            </div>
+        </div>
+
+        <!-- EXPIRY TIMELINE -->
+        <div class="timeline-section" id="timelineSection">
+            <div class="timeline-card">
+                <div class="timeline-header">
+                    <h3><i class="ri-bar-chart-horizontal-line" style="margin-right:8px;color:#3B82F6;"></i>Insurance Expiry Timeline</h3>
+                    <span style="font-size:0.82rem;color:#94A3B8;">Sorted by days remaining — green = valid, amber = expiring soon, red = expired</span>
+                </div>
+                <div style="position:relative;">
+                    <canvas id="timelineChart" style="max-height: 380px;"></canvas>
+                </div>
             </div>
         </div>
 
@@ -565,9 +609,93 @@
 
             gsap.from('.gs-fade', { y: 30, duration: 0.8, stagger: 0.1, ease: 'power3.out' });
             gsap.from('.gs-list-item', { x: -20, duration: 0.5, stagger: 0.05, ease: 'power2.out', delay: 0.3 });
+
+            buildTimeline(vehicleCache);
         }
 
         loadInsurance();
+
+        /* ── Expiry Timeline Chart ── */
+        let timelineChart = null;
+
+        function toggleTimeline() {
+            const section = document.getElementById('timelineSection');
+            const btn = document.getElementById('timelineToggleBtn');
+            const isVisible = section.classList.toggle('visible');
+            btn.style.background = isVisible ? 'var(--text-primary)' : 'white';
+            btn.style.color = isVisible ? 'white' : 'var(--text-primary)';
+        }
+
+        function buildTimeline(vehicles) {
+            if (!vehicles || vehicles.length === 0) return;
+
+            // Sort by days remaining ascending (expired first)
+            const sorted = [...vehicles].sort((a, b) => {
+                const da = TruFleet.daysUntilExpiry(a.insurance_expiry || a.insuranceExpiry);
+                const db = TruFleet.daysUntilExpiry(b.insurance_expiry || b.insuranceExpiry);
+                return da - db;
+            });
+
+            const labels = sorted.map(v => v.id || v.plate || '—');
+            const data   = sorted.map(v => {
+                const d = TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry);
+                return Math.max(d, -30); // cap expired at -30 for display
+            });
+            const colors = sorted.map(v => {
+                const rc = TruFleet.riskClass(v.insurance_expiry || v.insuranceExpiry);
+                return rc === 'crit' ? '#EF4444' : rc === 'warn' ? '#F59E0B' : '#10B981';
+            });
+
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            if (timelineChart) { timelineChart.destroy(); }
+            timelineChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Days Until Expiry',
+                        data,
+                        backgroundColor: colors,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    const d = ctx.raw;
+                                    if (d < 0) return 'Expired ' + Math.abs(d) + ' days ago';
+                                    if (d === 0) return 'Expires today!';
+                                    return d + ' days remaining';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#F1F5F9' },
+                            title: { display: true, text: 'Days Until Expiry', font: { size: 11 }, color: '#94A3B8' },
+                            ticks: { color: '#64748B' }
+                        },
+                        y: {
+                            grid: { display: false },
+                            ticks: { color: '#0F172A', font: { family: 'JetBrains Mono', size: 11 } }
+                        }
+                    }
+                }
+            });
+
+            // Dynamically set canvas height based on vehicle count
+            const canvas = document.getElementById('timelineChart');
+            canvas.parentElement.style.height = Math.max(200, vehicles.length * 36) + 'px';
+            if (timelineChart) timelineChart.resize();
+        }
 
         /* ── Modal ── */
         const modalOverlay = document.getElementById('renewModal');
