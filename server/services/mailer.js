@@ -19,7 +19,7 @@ const transport = nodemailer.createTransport({
   },
 });
 
-const FROM = process.env.MAIL_FROM || '"TruFleet Platform" <noreply@trufleet.io>';
+const FROM = process.env.MAIL_FROM || '"TruFleet Platform" <trufleet.info@gmail.com>';
 
 /* ── Generic send ───────────────────────────────────────── */
 async function sendMail({ to, subject, html, text }) {
