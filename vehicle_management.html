@@ -1154,9 +1154,7 @@
         async function submitAddVehicle() {
             // Hard-block personal vehicles
             if (_registryBlocked) {
-                alert('⛔  This is a private/personal vehicle and cannot be added to Fleet Management.
-
-Please update the vehicle\'s usage to "Commercial" in the Fleet Registration portal first.');
+                alert('\u26D4  This is a private/personal vehicle and cannot be added to Fleet Management.\n\nPlease update the vehicle usage to "Commercial" in the Fleet Registration portal first.');
                 return;
             }
             const plate   = document.getElementById('f-plate').value.trim().toUpperCase();
