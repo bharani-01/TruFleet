@@ -1,0 +1,40 @@
+# Firebase App Hosting — TruFleet
+# Backend ID: trufleet
+# Docs: https://firebase.google.com/docs/app-hosting/configure
+
+runConfig:
+  # Number of concurrent requests per instance (1–1000)
+  concurrency: 80
+  # CPU units allocated per instance
+  cpu: 1
+  # Memory per instance (e.g. 512Mi, 1Gi, 2Gi)
+  memoryMiB: 512
+  # Minimum instances to keep warm (0 = scale to zero)
+  minInstances: 0
+  # Maximum number of instances
+  maxInstances: 10
+
+env:
+  # Public/non-sensitive env vars — committed to source control
+  - variable: NODE_ENV
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: PORT
+    value: "3000"
+    availability:
+      - RUNTIME
+
+  # Sensitive vars — stored as Firebase Secrets (never committed)
+  # Run: firebase apphosting:secrets:set SUPABASE_URL
+  - variable: SUPABASE_URL
+    secret: SUPABASE_URL
+    availability:
+      - RUNTIME
+
+  - variable: SUPABASE_KEY
+    secret: SUPABASE_KEY
+    availability:
+      - RUNTIME

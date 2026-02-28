@@ -1,0 +1,41 @@
+{
+  "apphosting": {
+    "source": "."
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "server/**",
+      "apphosting.yaml",
+      ".env*",
+      "*.md"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "trufleet",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/dashboard.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|css)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "max-age=31536000"
+          }
+        ]
+      }
+    ]
+  }
+}
