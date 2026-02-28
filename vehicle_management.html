@@ -441,6 +441,36 @@
         .modal-field input.error { border-color: var(--accent-red); }
         .modal-full { grid-column: 1 / -1; }
 
+        /* ── Registry Verification Banner ── */
+        .verif-banner {
+            grid-column: 1 / -1;
+            display: none;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.83rem;
+            font-weight: 500;
+            border: 1px solid;
+            margin-bottom: 0.25rem;
+        }
+        .verif-banner i { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+        .verif-banner.verified   { background: #ECFDF5; border-color: #6EE7B7; color: #065F46; }
+        .verif-banner.not-found  { background: #FFFBEB; border-color: #FCD34D; color: #92400E; }
+        .verif-banner.blocked    { background: #FEF2F2; border-color: #FCA5A5; color: #7F1D1D; }
+        .verif-banner.checking   { background: #EFF6FF; border-color: #BFDBFE; color: #1E3A8A; }
+
+        .verif-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .verif-tag {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+        }
+        .verif-tag.match    { background: #D1FAE5; color: #065F46; }
+        .verif-tag.mismatch { background: #FEE2E2; color: #7F1D1D; }
+        .verif-tag.filled   { background: #DBEAFE; color: #1E3A8A; }
+
+        .modal-field input.prefilled { border-color: #6EE7B7; background: #F0FDF4; }
+
         /* Empty state */
         .empty-state {
             text-align: center; padding: 4rem 2rem; color: var(--text-tertiary);
@@ -741,8 +771,14 @@
             </div>
 
             <div class="modal-grid">
-                <div class="modal-field"><label>Plate Number *</label><input id="f-plate" placeholder="e.g. TN-45-AB-1234" style="text-transform:uppercase;"></div>
+                <div class="modal-field"><label>Plate Number *</label><input id="f-plate" placeholder="e.g. TN-45-AB-1234" style="text-transform:uppercase;" onblur="verifyFromRegistry()"></div>
                 <div class="modal-field"><label>Make / Brand *</label><input id="f-make" placeholder="e.g. Toyota"></div>
+
+                <!-- Verification Banner -->
+                <div class="verif-banner modal-full" id="verifBanner">
+                    <i id="verifIcon" class="ri-loader-4-line"></i>
+                    <div id="verifContent">Checking…</div>
+                </div>
                 <div class="modal-field"><label>Vehicle Type *</label>
                     <select id="f-type">
                         <option value="">Select type…</option>
@@ -948,7 +984,16 @@
         const addModal = document.getElementById('addModal');
         const addModalCard = document.getElementById('addModalCard');
 
+        let _registryRecord   = null;  // matched fleet_vehicles record
+        let _registryBlocked  = false; // true if personal vehicle
+
         function openAddModal() {
+            // reset verification state
+            _registryRecord  = null;
+            _registryBlocked = false;
+            const banner = document.getElementById('verifBanner');
+            banner.style.display = 'none';
+            banner.className = 'verif-banner modal-full';
             addModal.style.display = 'flex';
             gsap.fromTo(addModalCard,
                 { scale: 0.94, opacity: 0, y: 24 },
@@ -989,7 +1034,131 @@
             document.getElementById('f-photo-preview').style.backgroundImage = `url('${url}')`;
         }
 
+        async function verifyFromRegistry() {
+            const rawPlate = document.getElementById('f-plate').value.trim().toUpperCase();
+            if (!rawPlate) return;
+
+            // Normalise: strip spaces/dashes for comparison
+            const normPlate = rawPlate.replace(/[\s\-]/g, '');
+
+            const banner  = document.getElementById('verifBanner');
+            const icon    = document.getElementById('verifIcon');
+            const content = document.getElementById('verifContent');
+
+            // Show checking state
+            banner.style.display = 'flex';
+            banner.className = 'verif-banner modal-full checking';
+            icon.className   = 'ri-loader-4-line';
+            content.innerHTML = 'Checking Fleet Registry&hellip;';
+
+            _registryRecord  = null;
+            _registryBlocked = false;
+
+            try {
+                const res  = await fetch(`/api/fleet-vehicles?search=${encodeURIComponent(normPlate)}`);
+                const json = await res.json();
+                const records = (json.data || []);
+
+                // Find exact match (normalise stored numbers too)
+                const match = records.find(r =>
+                    (r.vehicle_number || '').replace(/[\s\-]/g, '').toUpperCase() === normPlate
+                );
+
+                if (!match) {
+                    banner.className = 'verif-banner modal-full not-found';
+                    icon.className   = 'ri-error-warning-line';
+                    content.innerHTML = `<strong>Not found in Fleet Registry.</strong><br>
+                        This plate has no registration record. You may still add it manually, but verify the details carefully.`;
+                    return;
+                }
+
+                // ── BLOCK personal/private vehicles ──
+                if (match.vehicle_usage === 'personal') {
+                    _registryBlocked = true;
+                    banner.className = 'verif-banner modal-full blocked';
+                    icon.className   = 'ri-forbid-line';
+                    content.innerHTML = `<strong>Private / Personal vehicle — not allowed in Fleet Management.</strong><br>
+                        Registration type is <strong>Personal</strong>. Only commercial vehicles registered in the Fleet Registry may be added here.
+                        Please update the vehicle's usage type in Fleet Registration first.`;
+                    return;
+                }
+
+                // ── Record found + commercial ──
+                _registryRecord = match;
+
+                // Pre-fill fields from registry
+                const formMake  = document.getElementById('f-make').value.trim();
+                const formType  = document.getElementById('f-type').value;
+                const formVin   = document.getElementById('f-vin').value.trim().toUpperCase();
+                const formOwner = document.getElementById('f-owner').value.trim();
+
+                // Helper: set field + highlight if was empty
+                function prefill(id, val) {
+                    const el = document.getElementById(id);
+                    if (val && !el.value.trim()) {
+                        el.value = val;
+                        el.classList.add('prefilled');
+                    }
+                }
+
+                prefill('f-make',  match.make  || '');
+                prefill('f-vin',   match.vin   || '');
+                prefill('f-owner', match.owner_name || '');
+
+                // Match a vehicle type from dropdown
+                const typeMap = {
+                    'truck':'Truck','van':'Van','pickup':'Pickup','tanker':'Tanker',
+                    'trailer':'Trailer','bus':'Bus','sedan':'Sedan','suv':'SUV',
+                    'motorcycle':'Motorcycle','other':'Heavy Commercial'
+                };
+                const regType = typeMap[(match.vehicle_type||'').toLowerCase()] || match.vehicle_type;
+                prefill('f-type', regType);
+
+                // Build comparison tags
+                const checks = [
+                    { label: 'Plate',      db: match.vehicle_number,  form: rawPlate },
+                    { label: 'VIN',        db: match.vin,             form: document.getElementById('f-vin').value.trim().toUpperCase() },
+                    { label: 'Make',       db: match.make,            form: document.getElementById('f-make').value.trim() },
+                    { label: 'Type',       db: match.vehicle_type,    form: document.getElementById('f-type').value },
+                    { label: 'Owner',      db: match.owner_name,      form: document.getElementById('f-owner').value.trim() },
+                ];
+
+                const tags = checks.map(c => {
+                    if (!c.form) return `<span class="verif-tag filled"><i class="ri-magic-line"></i>${c.label}: auto-filled</span>`;
+                    const ok = c.db && c.form &&
+                        c.db.replace(/[\s\-]/g,'').toUpperCase() === c.form.replace(/[\s\-]/g,'').toUpperCase();
+                    if (!c.db) return '';
+                    return ok
+                        ? `<span class="verif-tag match"><i class="ri-check-line"></i>${c.label}</span>`
+                        : `<span class="verif-tag mismatch"><i class="ri-close-line"></i>${c.label} mismatch</span>`;
+                }).filter(Boolean).join('');
+
+                const hasMMismatch = checks.some(c => {
+                    if (!c.form || !c.db) return false;
+                    return c.db.replace(/[\s\-]/g,'').toUpperCase() !== c.form.replace(/[\s\-]/g,'').toUpperCase();
+                });
+
+                banner.className = 'verif-banner modal-full verified';
+                icon.className   = 'ri-verified-badge-line';
+                content.innerHTML = `<div><strong>Verified in Fleet Registry</strong>${hasMMismatch ? ' — some fields differ from the registry' : ' — all matched fields confirmed'}.
+                    <span style="font-size:0.78rem;opacity:0.8;"> Owner: ${match.owner_name} &middot; Usage: ${match.vehicle_usage}</span>
+                    <div class="verif-row">${tags}</div></div>`;
+
+            } catch (err) {
+                banner.className = 'verif-banner modal-full not-found';
+                icon.className   = 'ri-wifi-off-line';
+                content.innerHTML = `<strong>Could not reach Fleet Registry.</strong> Proceeding without verification.`;
+            }
+        }
+
         async function submitAddVehicle() {
+            // Hard-block personal vehicles
+            if (_registryBlocked) {
+                alert('⛔  This is a private/personal vehicle and cannot be added to Fleet Management.
+
+Please update the vehicle\'s usage to "Commercial" in the Fleet Registration portal first.');
+                return;
+            }
             const plate   = document.getElementById('f-plate').value.trim().toUpperCase();
             const make    = document.getElementById('f-make').value.trim();
             const type    = document.getElementById('f-type').value;
@@ -1030,9 +1199,13 @@
                 });
                 closeAddModal();
                 await renderList();
+                _registryRecord  = null;
+                _registryBlocked = false;
                 pendingAddPhoto = DEFAULT_PHOTO;
                 ['f-plate','f-make','f-type','f-year','f-vin','f-engine','f-owner','f-provider','f-policy','f-expiry']
-                    .forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('error'); });
+                    .forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('error'); el.classList.remove('prefilled'); });
+                document.getElementById('verifBanner').style.display = 'none';
+                document.getElementById('verifBanner').className = 'verif-banner modal-full';
                 document.getElementById('f-photo-preview').style.backgroundImage = `url('${DEFAULT_PHOTO}')`;
                 document.getElementById('f-photo-url').value = '';
                 document.getElementById('f-photo-file').value = '';
