@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | My Account</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- TruFleet API Client -->
+    <script src="trufleet-api.js"></script>
+    <script src="auth-check.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Brand Palette */
+            --bg-body: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0F172A;
+            
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-tertiary: #94A3B8;
+
+            /* Accents */
+            --accent-blue: #3B82F6;
+            --accent-green: #10B981;
+            --border-light: #E2E8F0;
+
+            /* Dimensions */
+            --sidebar-width-collapsed: 72px;
+            --sidebar-width-expanded: 260px;
+            
+            /* Physics */
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-float: 0 20px 40px -10px rgba(0, 0, 0, 0.08);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: var(--sidebar-width-collapsed);
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 50;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .sidebar:hover { width: var(--sidebar-width-expanded); }
+        .brand-icon {
+            height: 40px; display: flex; align-items: center; padding-left: 20px;
+            margin-bottom: 3rem; color: white; white-space: nowrap;
+        }
+        .brand-icon i { font-size: 1.75rem; min-width: 32px; color: var(--accent-blue); }
+        .brand-text {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 1.25rem;
+            margin-left: 16px; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .sidebar:hover .brand-text { opacity: 1; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; padding: 0 12px; }
+        .nav-item {
+            display: flex; align-items: center; height: 48px; padding: 0 14px;
+            border-radius: 8px; color: #94A3B8; text-decoration: none;
+            transition: all 0.2s ease; white-space: nowrap; cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-item i { font-size: 1.4rem; min-width: 24px; }
+        .nav-label { margin-left: 16px; font-weight: 500; opacity: 0; transition: opacity 0.2s ease; }
+        .sidebar:hover .nav-label { opacity: 1; }
+
+        /* --- MAIN LAYOUT --- */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width-collapsed);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-bg {
+            height: 200px;
+            background: linear-gradient(120deg, #F1F5F9 0%, #E2E8F0 100%);
+            position: relative;
+            z-index: 0;
+        }
+
+        .account-wrapper {
+            max-width: 1400px;
+            width: 100%;
+            margin: -100px auto 0;
+            padding: 0 2rem 2rem;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+            position: relative;
+            z-index: 10;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        /* --- LEFT COLUMN: IDENTITY CARD --- */
+        .id-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-float);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            border: 1px solid white;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .profile-image-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 1.5rem;
+            position: relative;
+        }
+
+        .profile-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: #0F172A;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-family: 'Manrope';
+            border: 4px solid white;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .verified-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 28px;
+            height: 28px;
+            background: var(--accent-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid white;
+            font-size: 0.9rem;
+        }
+
+        .user-name {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .user-role {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .stat-box { text-align: center; }
+        .stat-val { font-weight: 700; font-size: 1.1rem; color: var(--text-primary); }
+        .stat-lbl { font-size: 0.75rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+
+        /* --- RIGHT COLUMN: DETAILS --- */
+        .details-section {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--border-light);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .card-header h3 { font-family: 'Manrope'; font-size: 1.25rem; font-weight: 700; }
+        .card-header p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            transition: all 0.2s;
+            background: #F8FAFC;
+        }
+        .input-field:focus {
+            background: white;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .btn-primary {
+            background: var(--text-primary);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+        /* Session List */
+        .session-item {
+            display: flex;
+            align-items: center;
+            padding: 1.25rem 0;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        .session-item:last-child { border-bottom: none; }
+
+        .device-icon {
+            width: 48px; height: 48px;
+            background: #F1F5F9;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: var(--text-secondary);
+            margin-right: 1rem;
+        }
+
+        .session-info { flex: 1; }
+        .device-name { font-weight: 600; font-size: 0.95rem; display: block; }
+        .session-loc { font-size: 0.85rem; color: var(--text-tertiary); display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .ip-badge { background: #F1F5F9; padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono'; font-size: 0.75rem; }
+
+        .current-badge {
+            background: #DCFCE7; color: #166534;
+            font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 100px;
+        }
+
+        .btn-revoke {
+            color: #EF4444; background: none; border: 1px solid transparent;
+            padding: 6px 12px; border-radius: 6px; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+        }
+        .btn-revoke:hover { background: #FEF2F2; border-color: #FECACA; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="brand-icon">
+            <i class="ri-truck-fill"></i>
+            <span class="brand-text">TRUFLEET</span>
+        </div>
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="ri-dashboard-3-line"></i><span class="nav-label">Overview</span>
+            </a>
+            <a href="vehicle_management.html" class="nav-item">
+                <i class="ri-bus-line"></i><span class="nav-label">Vehicle Management</span>
+            </a>
+            <a href="insurance_monitor.html" class="nav-item">
+                <i class="ri-shield-check-line"></i><span class="nav-label">Insurance Monitor</span>
+            </a>
+            <a href="audits.html" class="nav-item">
+                <i class="ri-file-list-3-line"></i><span class="nav-label">Audit Logs</span>
+            </a>
+            <div style="flex:1"></div>
+            <a href="setting.html" class="nav-item">
+                <i class="ri-settings-4-line"></i><span class="nav-label">Settings</span>
+            </a>
+            <a href="#" class="nav-item active">
+                <i class="ri-user-line"></i><span class="nav-label">Account</span>
+            </a>
+            <a href="#" class="nav-item" onclick="event.preventDefault();logout()" style="color: #EF4444;">
+                <i class="ri-logout-box-r-line"></i><span class="nav-label">Logout</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        
+        <div class="header-bg"></div>
+
+        <div class="account-wrapper">
+            
+            <!-- LEFT: IDENTITY CARD -->
+            <div class="id-card gs-fade">
+                <div class="profile-image-container">
+                    <div class="profile-img">CO</div>
+                    <div class="verified-badge"><i class="ri-check-line"></i></div>
+                </div>
+                <h1 class="user-name">Chief Officer</h1>
+                <div class="user-role">Global Fleet Administrator</div>
+                
+                <div style="margin: 1.5rem 0;">
+                    <span style="background: #ECFDF5; color: #059669; padding: 6px 12px; border-radius: 100px; font-size: 0.8rem; font-weight: 600;">
+                        ● Active Status
+                    </span>
+                </div>
+
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div class="stat-val">Nov 2024</div>
+                        <div class="stat-lbl">Member Since</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-val" style="color: var(--accent-green);">98/100</div>
+                        <div class="stat-lbl">Security Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: DETAILS & SETTINGS -->
+            <div class="details-section">
+                
+                <!-- Personal Info -->
+                <div class="detail-card gs-fade">
+                    <div class="card-header">
+                        <div>
+                            <h3>Personal Information</h3>
+                            <p>Update your photo and personal details here.</p>
+                        </div>
+                        <button class="btn-primary">Save Changes</button>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" class="input-field" value="Chief">
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" class="input-field" value="Officer">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" class="input-field" value="admin@trufleet.io">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" class="input-field" value="+1 (555) 012-3456">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security / Sessions -->
+                <div class="detail-card gs-fade">
+                    <div class="card-header">
+                        <div>
+                            <h3>Active Sessions</h3>
+                            <p>Manage devices logged into your account.</p>
+                        </div>
+                    </div>
+
+                    <div class="session-list">
+                        <!-- Current Device -->
+                        <div class="session-item">
+                            <div class="device-icon"><i class="ri-macbook-line"></i></div>
+                            <div class="session-info">
+                                <span class="device-name">MacBook Pro M3 Max</span>
+                                <div class="session-loc">
+                                    San Francisco, CA • <span class="ip-badge">192.168.1.1</span> • Chrome
+                                </div>
+                            </div>
+                            <div class="current-badge">Current Device</div>
+                        </div>
+
+                        <!-- Other Device -->
+                        <div class="session-item">
+                            <div class="device-icon"><i class="ri-smartphone-line"></i></div>
+                            <div class="session-info">
+                                <span class="device-name">iPhone 15 Pro</span>
+                                <div class="session-loc">
+                                    Austin, TX • <span class="ip-badge">10.0.0.55</span> • TruFleet App
+                                </div>
+                            </div>
+                            <button class="btn-revoke">Revoke</button>
+                        </div>
+
+                        <!-- Other Device -->
+                        <div class="session-item">
+                            <div class="device-icon"><i class="ri-window-line"></i></div>
+                            <div class="session-info">
+                                <span class="device-name">Windows Workstation</span>
+                                <div class="session-loc">
+                                    London, UK • <span class="ip-badge">172.16.0.1</span> • Edge
+                                </div>
+                            </div>
+                            <button class="btn-revoke">Revoke</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                 <div class="detail-card gs-fade">
+                    <div class="card-header">
+                        <div>
+                            <h3>Security & Authentication</h3>
+                            <p>Update password and 2FA settings.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Current Password</label>
+                            <input type="password" class="input-field" placeholder="••••••••••••">
+                        </div>
+                        <div></div> <!-- Spacer -->
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" class="input-field">
+                        </div>
+                         <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" class="input-field">
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                        <button class="btn-primary" style="background: white; color: var(--text-primary); border: 1px solid var(--border-light);">Update Password</button>
+                    </div>
+                 </div>
+
+                <!-- Danger Zone -->
+                <div class="detail-card gs-fade" style="border: 2px solid #FEE2E2;">
+                    <div class="card-header">
+                        <div>
+                            <h3 style="color: #DC2626;">Danger Zone</h3>
+                            <p>Irreversible and destructive actions.</p>
+                        </div>
+                    </div>
+                    <div style="padding: 1.5rem; background: #FEF2F2; border-radius: 12px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: #DC2626; margin-bottom: 0.25rem;">Logout from your account</div>
+                            <div style="font-size: 0.875rem; color: #991B1B;">This will end your current session and redirect you to the login page.</div>
+                        </div>
+                        <button onclick="logout()" class="btn-primary" style="background: #DC2626; color: white; border: none; min-width: 120px;">
+                            <i class="ri-logout-box-r-line" style="margin-right: 8px;"></i>Logout
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Animations
+        gsap.from(".gs-fade", {
+            y: 30,
+            duration: 0.8,
+            stagger: 0.15,
+            ease: "power3.out",
+            delay: 0.2
+        });
+    </script>
+</body>
+</html>

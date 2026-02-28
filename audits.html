@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Forensic Audit</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- TruFleet API Client -->
+    <script src="trufleet-api.js"></script>
+    <script src="trufleet-notif.js"></script>
+    <script src="auth-check.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Brand Palette - Institutional Light */
+            --bg-body: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0F172A;
+            
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-tertiary: #94A3B8;
+
+            /* Status Colors */
+            --status-success: #10B981;
+            --status-denied: #EF4444;
+            --status-warn: #F59E0B;
+            
+            /* Dimensions */
+            --sidebar-width-collapsed: 72px;
+            --sidebar-width-expanded: 260px;
+            --header-height: 80px;
+
+            /* Physics & Depth */
+            --shadow-row: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            --border-light: #E2E8F0;
+            
+            --radius-lg: 16px;
+            --radius-md: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR (Consistent) --- */
+        .sidebar {
+            width: var(--sidebar-width-collapsed);
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 50;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .sidebar:hover { width: var(--sidebar-width-expanded); }
+
+        .brand-icon {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            margin-bottom: 3rem;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .brand-icon i { font-size: 1.75rem; min-width: 32px; color: #3B82F6; }
+        .brand-text {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-left: 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar:hover .brand-text { opacity: 1; }
+
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; padding: 0 12px; }
+        .nav-item {
+            display: flex; align-items: center; height: 48px; padding: 0 14px;
+            border-radius: 8px; color: #94A3B8; text-decoration: none;
+            transition: all 0.2s ease; white-space: nowrap; cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-item i { font-size: 1.4rem; min-width: 24px; }
+        .nav-label { margin-left: 16px; font-weight: 500; opacity: 0; transition: opacity 0.2s ease; }
+        .sidebar:hover .nav-label { opacity: 1; }
+
+        /* --- MAIN LAYOUT --- */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width-collapsed);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.4s ease;
+        }
+
+        /* --- HEADER --- */
+        .top-bar {
+            height: var(--header-height);
+            background: var(--bg-body);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-title h1 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Live Indicator */
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #F1F5F9;
+            border: 1px solid #E2E8F0;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .live-badge.active {
+            background: #ECFDF5;
+            color: #065F46;
+            border-color: #A7F3D0;
+        }
+
+        .pulse-dot {
+            width: 8px; height: 8px; background: #CBD5E1; border-radius: 50%;
+        }
+        
+        .live-badge.active .pulse-dot {
+            background: #10B981;
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-filter {
+            background: white; border: 1px solid var(--border-light);
+            padding: 0.6rem 1rem; border-radius: 8px;
+            font-weight: 600; font-size: 0.9rem; color: var(--text-secondary);
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-filter:hover { border-color: var(--text-primary); color: var(--text-primary); }
+
+        /* --- LOG STREAM --- */
+        .log-container {
+            flex: 1;
+            padding: 0 2.5rem 2.5rem 2.5rem;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Timeline Connector */
+        .timeline-line {
+            position: absolute;
+            top: 20px;
+            left: 54px; /* Aligned with icon center */
+            width: 2px;
+            height: 100%;
+            background: #E2E8F0;
+            z-index: 0;
+        }
+
+        /* Column Headers */
+        .log-header {
+            display: grid;
+            grid-template-columns: 80px 140px 180px 1.5fr 140px 1fr 40px;
+            padding: 0 1.5rem 1rem 1.5rem;
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Log Entry Row */
+        .log-entry {
+            background: white;
+            border-radius: var(--radius-md);
+            margin-bottom: 0.8rem;
+            box-shadow: var(--shadow-row);
+            border: 1px solid transparent;
+            position: relative;
+            z-index: 1;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            overflow: hidden; /* For accordion */
+        }
+
+        .log-summary {
+            display: grid;
+            grid-template-columns: 80px 140px 180px 1.5fr 140px 1fr 40px;
+            align-items: center;
+            padding: 1rem 1.5rem;
+        }
+
+        .log-entry:hover {
+            transform: scale(1.002);
+            box-shadow: var(--shadow-hover);
+            border-color: #E2E8F0;
+        }
+
+        /* Elements */
+        .log-icon {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem;
+            background: #F8FAFC;
+            border: 2px solid white; /* Cutout effect from timeline */
+            position: relative;
+            z-index: 2;
+        }
+
+        .mono-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .timestamp {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 0.75rem; font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-auth { background: #ECFDF5; color: #059669; }
+        .status-deny { background: #FEF2F2; color: #DC2626; }
+        .status-sys { background: #F1F5F9; color: var(--text-secondary); }
+
+        .reason-text { font-size: 0.9rem; color: var(--text-secondary); }
+        .reason-critical { color: var(--status-denied); font-weight: 500; }
+
+        .expand-icon { color: var(--text-tertiary); transition: transform 0.3s; }
+        .log-entry.open .expand-icon { transform: rotate(180deg); }
+
+        /* JSON Drawer (Hidden by default) */
+        .log-details {
+            height: 0;
+            overflow: hidden;
+            background: #F8FAFC;
+            border-top: 1px solid #E2E8F0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            transition: height 0.3s ease;
+        }
+
+        .json-viewer {
+            padding: 1.5rem;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .key { color: #64748B; }
+        .string { color: #059669; }
+        .number { color: #D97706; }
+        .boolean { color: #7C3AED; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="brand-icon">
+            <i class="ri-truck-fill"></i>
+            <span class="brand-text">TRUFLEET</span>
+        </div>
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="ri-dashboard-3-line"></i><span class="nav-label">Overview</span>
+            </a>
+            <a href="vehicle_management.html" class="nav-item">
+                <i class="ri-bus-line"></i><span class="nav-label">Vehicle Management</span>
+            </a>
+            <a href="insurance_monitor.html" class="nav-item">
+                <i class="ri-shield-check-line"></i><span class="nav-label">Insurance Monitor</span>
+            </a>
+            <a href="audits.html" class="nav-item active">
+                <i class="ri-file-list-3-line"></i><span class="nav-label">Audit Logs</span>
+            </a>
+            <div style="flex: 1"></div>
+            <a href="#" class="nav-item" id="notifBell" onclick="event.preventDefault();toggleNotifPanel()" style="position:relative;">
+                <i class="ri-notification-3-line"></i><span class="nav-label">Notifications</span>
+                <span id="notifBadge" style="position:absolute;top:6px;left:38px;background:#EF4444;color:white;font-size:0.65rem;font-weight:700;min-width:18px;height:18px;display:none;align-items:center;justify-content:center;border-radius:9px;padding:0 5px;">0</span>
+            </a>
+            <a href="setting.html" class="nav-item">
+                <i class="ri-settings-4-line"></i><span class="nav-label">Settings</span>
+            </a>
+            <a href="account.html" class="nav-item">
+                <i class="ri-user-line"></i><span class="nav-label">Account</span>
+            </a>
+            <a href="#" class="nav-item" onclick="event.preventDefault();logout()" style="color: #EF4444;">
+                <i class="ri-logout-box-r-line"></i><span class="nav-label">Logout</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- NOTIFICATION PANEL -->
+    <div id="notifPanel" style="position:fixed;top:0;right:-400px;width:380px;height:100vh;background:white;box-shadow:-10px 0 40px rgba(0,0,0,0.08);z-index:300;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;font-family:'Inter',sans-serif;">
+        <div style="padding:1.5rem;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-family:'Manrope';font-size:1.1rem;">Notifications</h3>
+            <div style="display:flex;gap:8px;">
+                <button onclick="markAllRead()" style="font-size:0.8rem;color:#3B82F6;background:none;border:none;cursor:pointer;font-weight:600;">Mark all read</button>
+                <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94A3B8;"><i class="ri-close-line"></i></button>
+            </div>
+        </div>
+        <div id="notifList" style="flex:1;overflow-y:auto;padding:0.5rem;"></div>
+    </div>
+    <div id="notifOverlay" onclick="toggleNotifPanel()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:299;display:none;"></div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>System Ledger</h1>
+                <div class="live-badge" onclick="toggleLiveMode(this)">
+                    <div class="pulse-dot"></div>
+                    <span>Live Feed</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div style="position: relative;">
+                    <i class="ri-search-line" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94A3B8;"></i>
+                    <input id="auditSearch" type="text" placeholder="Search Entity ID or description..." style="padding: 10px 10px 10px 36px; border: 1px solid #E2E8F0; border-radius: 8px; font-family: 'Inter'; width: 250px;">
+                </div>
+                <button class="btn-filter" id="filterTypeBtn"><i class="ri-filter-3-line"></i> Filter</button>
+                <button class="btn-filter" id="exportLogsBtn"><i class="ri-download-line"></i> Export</button>
+            </div>
+        </div>
+
+        <div class="log-container">
+            <div class="timeline-line"></div>
+            
+            <div class="log-header">
+                <div>Type</div>
+                <div>Timestamp</div>
+                <div>Entity ID</div>
+                <div>Event Description</div>
+                <div>Status</div>
+                <div>Details</div>
+                <div></div>
+            </div>
+
+            <div id="feedStream">
+                
+                <!-- Log entries populated by JS -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        /* ── State ── */
+        let auditFilter = 'ALL';
+        let auditSearch = '';
+        let allLogs = [];
+        let isLive = false;
+        let liveInterval;
+
+        /* ── Icon/badge helpers ── */
+        function logIcon(type, status) {
+            if (status === 'AUTHORIZED' || status === 'SUCCESS' || status === 'COMPLETE') return { color: '#059669', bg: '#ECFDF5', icon: 'ri-key-2-line' };
+            if (status === 'DENIED')  return { color: '#DC2626', bg: '#FEF2F2', icon: 'ri-alarm-warning-line' };
+            if (type  === 'SYSTEM')   return { color: '#3B82F6', bg: '#EFF6FF', icon: 'ri-database-2-line' };
+            if (type  === 'ADMIN')    return { color: '#64748B', bg: '#F1F5F9', icon: 'ri-user-settings-line' };
+            return { color: '#94A3B8', bg: '#F8FAFC', icon: 'ri-information-line' };
+        }
+
+        function badgeClass(status) {
+            if (status === 'AUTHORIZED' || status === 'SUCCESS' || status === 'COMPLETE') return 'status-auth';
+            if (status === 'DENIED') return 'status-deny';
+            return 'status-sys';
+        }
+
+        function renderLogEntry(log) {
+            const ts  = log.created_at || log.timestamp || '';
+            const time = ts ? new Date(ts).toTimeString().slice(0, 12) : '—';
+            const entityId = log.entity_id || log.entityId || 'SYSTEM';
+            const desc = log.description || '—';
+            const detail = log.detail || '—';
+            const status = (log.status || 'INFO').toUpperCase();
+            const type = (log.type || 'SYSTEM').toUpperCase();
+            const { color, bg, icon } = logIcon(type, status);
+            const badgeCls  = badgeClass(status);
+            const jsonData  = log.json_data || log.json || {};
+            const jsonStr   = JSON.stringify(jsonData, null, 2)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g,'&gt;')
+                .replace(/"([^"]+)":/g, '<span class="key">"$1":</span>')
+                .replace(/: "([^"]*)"/g, ': <span class="string">"$1"</span>')
+                .replace(/: (\d+)/g, ': <span class="number">$1</span>')
+                .replace(/: (true|false)/g, ': <span class="boolean">$1</span>');
+            return `
+                <div class="log-entry" onclick="toggleDetails(this)">
+                    <div class="log-summary">
+                        <div class="log-icon" style="color:${color};background:${bg};"><i class="${icon}"></i></div>
+                        <div class="timestamp">${time}</div>
+                        <div class="mono-text">${entityId}</div>
+                        <div class="reason-text">${desc}</div>
+                        <div><span class="status-badge ${badgeCls}">${status.charAt(0)+status.slice(1).toLowerCase()}</span></div>
+                        <div class="${status==='DENIED'?'reason-critical':'reason-text'}">${detail}</div>
+                        <div><i class="ri-arrow-down-s-line expand-icon"></i></div>
+                    </div>
+                    <div class="log-details">
+                        <div class="json-viewer"><pre style="white-space:pre-wrap;font-family:inherit;">${jsonStr}</pre></div>
+                    </div>
+                </div>`;
+        }
+
+        function applyFilters(logs) {
+            let result = logs;
+            if (auditFilter !== 'ALL') result = result.filter(l => (l.type||'').toUpperCase() === auditFilter);
+            if (auditSearch) {
+                const q = auditSearch.toLowerCase();
+                result = result.filter(l =>
+                    (l.entity_id||l.entityId||'').toLowerCase().includes(q) ||
+                    (l.description||'').toLowerCase().includes(q) ||
+                    (l.detail||'').toLowerCase().includes(q)
+                );
+            }
+            return result;
+        }
+
+        function renderFeed() {
+            const stream = document.getElementById('feedStream');
+            const filtered = applyFilters(allLogs);
+            if (filtered.length === 0) {
+                stream.innerHTML = '<div style="text-align:center;padding:3rem;color:#94A3B8;"><i class="ri-file-list-3-line" style="font-size:2rem;"></i><p style="margin-top:1rem;">No log entries found.</p></div>';
+                return;
+            }
+            stream.innerHTML = filtered.map(renderLogEntry).join('');
+            gsap.from('.log-entry', { y: 20, duration: 0.4, stagger: 0.05, ease: 'power2.out' });
+        }
+
+        /* ── Load logs ── */
+        async function loadLogs() {
+            try {
+                allLogs = await TruFleet.getLogs({ limit: 100 });
+            } catch (e) {
+                console.warn('Failed to load audit logs', e);
+                allLogs = [];
+            }
+            renderFeed();
+        }
+
+        loadLogs();
+
+        /* ── Search ── */
+        document.getElementById('auditSearch').addEventListener('input', function () {
+            auditSearch = this.value.trim();
+            renderFeed();
+        });
+
+        /* ── Filter button cycles through types ── */
+        const FILTER_CYCLE = ['ALL','AUTH','ADMIN','SYSTEM'];
+        let filterIdx = 0;
+        document.getElementById('filterTypeBtn').addEventListener('click', function () {
+            filterIdx = (filterIdx + 1) % FILTER_CYCLE.length;
+            auditFilter = FILTER_CYCLE[filterIdx];
+            this.textContent = '\u25BC ' + (auditFilter === 'ALL' ? 'All Types' : auditFilter);
+            renderFeed();
+        });
+
+        /* ── Export CSV ── */
+        document.getElementById('exportLogsBtn').addEventListener('click', function () {
+            const filtered = applyFilters(allLogs);
+            const headers = 'Timestamp,Type,EntityID,Description,Status,Detail';
+            const rows = filtered.map(l =>
+                [l.created_at||l.timestamp, l.type, l.entity_id||l.entityId, l.description, l.status, l.detail].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')
+            );
+            const blob = new Blob([[headers].concat(rows).join('\n')], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'trufleet-audit-' + new Date().toISOString().slice(0,10) + '.csv';
+            a.click();
+        });
+
+        /* ── Expand/Collapse ── */
+        function toggleDetails(element) {
+            const details = element.querySelector('.log-details');
+            const isOpen = element.classList.contains('open');
+            if (isOpen) {
+                element.classList.remove('open');
+                gsap.to(details, { height: 0, duration: 0.3, ease: 'power2.out' });
+            } else {
+                element.classList.add('open');
+                gsap.set(details, { height: 'auto' });
+                gsap.from(details, { height: 0, duration: 0.3, ease: 'power2.out' });
+            }
+        }
+
+        /* ── Live polling ── */
+        function toggleLiveMode(btn) {
+            isLive = !isLive;
+            btn.classList.toggle('active');
+            if (isLive) {
+                liveInterval = setInterval(async () => {
+                    await loadLogs();
+                }, 5000);
+            } else {
+                clearInterval(liveInterval);
+            }
+        }
+    </script>
+</body>
+</html>

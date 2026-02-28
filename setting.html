@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Configuration</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- TruFleet API Client -->
+    <script src="trufleet-api.js"></script>
+    <script src="auth-check.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+
+    <style>
+        :root {
+            /* Brand Palette */
+            --bg-body: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0F172A;
+            
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-tertiary: #94A3B8;
+
+            /* Accents */
+            --accent-blue: #3B82F6;
+            --accent-indigo: #6366F1;
+            --accent-red: #EF4444;
+            --border-light: #E2E8F0;
+
+            /* Dimensions */
+            --sidebar-width-collapsed: 72px;
+            --sidebar-width-expanded: 260px;
+            
+            /* Physics */
+            --shadow-card: 0 1px 3px rgba(0,0,0,0.05);
+            --shadow-float: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: var(--sidebar-width-collapsed);
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 50;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .sidebar:hover { width: var(--sidebar-width-expanded); }
+        .brand-icon {
+            height: 40px; display: flex; align-items: center; padding-left: 20px;
+            margin-bottom: 3rem; color: white; white-space: nowrap;
+        }
+        .brand-icon i { font-size: 1.75rem; min-width: 32px; color: var(--accent-blue); }
+        .brand-text {
+            font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 1.25rem;
+            margin-left: 16px; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .sidebar:hover .brand-text { opacity: 1; }
+        .nav-menu { display: flex; flex-direction: column; gap: 8px; padding: 0 12px; }
+        .nav-item {
+            display: flex; align-items: center; height: 48px; padding: 0 14px;
+            border-radius: 8px; color: #94A3B8; text-decoration: none;
+            transition: all 0.2s ease; white-space: nowrap; cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.1); color: white; }
+        .nav-item i { font-size: 1.4rem; min-width: 24px; }
+        .nav-label { margin-left: 16px; font-weight: 500; opacity: 0; transition: opacity 0.2s ease; }
+        .sidebar:hover .nav-label { opacity: 1; }
+
+        /* --- MAIN LAYOUT --- */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width-collapsed);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER --- */
+        .settings-header {
+            background: white;
+            border-bottom: 1px solid var(--border-light);
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 20;
+        }
+
+        .header-text h1 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .btn-save {
+            background: var(--text-primary);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 100px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+        .btn-save:hover { transform: translateY(-2px); }
+
+        /* --- SETTINGS GRID --- */
+        .settings-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            overflow: hidden;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* Left Nav */
+        .settings-nav {
+            padding: 2rem;
+            border-right: 1px solid var(--border-light);
+            background: #F8FAFC;
+        }
+
+        .nav-section-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            margin-top: 1.5rem;
+        }
+        .nav-section-label:first-child { margin-top: 0; }
+
+        .settings-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .settings-link:hover { background: white; color: var(--text-primary); }
+        .settings-link.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+            font-weight: 600;
+        }
+
+        /* Right Content */
+        .settings-panel {
+            padding: 3rem;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .settings-section {
+            margin-bottom: 4rem;
+        }
+
+        .section-header { margin-bottom: 1.5rem; }
+        .section-header h2 { font-family: 'Manrope'; font-size: 1.25rem; margin-bottom: 0.5rem; }
+        .section-header p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        .card {
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow-card);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Form Elements */
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--text-secondary); }
+        
+        .input-field {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-family: 'Inter';
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+        .input-field:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+
+        /* Avatar Upload */
+        .avatar-upload {
+            display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem;
+        }
+        .avatar-circle {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: #E2E8F0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; color: var(--text-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-trigger {
+            background: white; border: 1px solid var(--border-light);
+            padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer;
+        }
+
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #F1F5F9;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        
+        .toggle-switch {
+            width: 44px; height: 24px;
+            background: #CBD5E1;
+            border-radius: 100px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 20px; height: 20px;
+            background: white; border-radius: 50%;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .toggle-switch.active { background: var(--accent-blue); }
+        .toggle-switch.active::after { transform: translateX(20px); }
+
+        /* API Key Visual */
+        .api-box {
+            background: #F8FAFC;
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-family: 'JetBrains Mono'; font-size: 0.9rem;
+        }
+        .key-hidden { filter: blur(4px); transition: filter 0.2s; cursor: pointer; }
+        .key-hidden:hover { filter: blur(0); }
+
+        /* Danger Zone */
+        .danger-card { border-color: #FECACA; background: #FEF2F2; }
+        .btn-danger { background: white; border: 1px solid #EF4444; color: #EF4444; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        .btn-danger:hover { background: #EF4444; color: white; }
+
+        /* Team List */
+        .team-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 0; border-bottom: 1px solid #F1F5F9;
+        }
+        .role-badge { background: #E0E7FF; color: #4338CA; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="brand-icon">
+            <i class="ri-truck-fill"></i>
+            <span class="brand-text">TRUFLEET</span>
+        </div>
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="ri-dashboard-3-line"></i><span class="nav-label">Overview</span>
+            </a>
+            <a href="vehicle_management.html" class="nav-item">
+                <i class="ri-bus-line"></i><span class="nav-label">Vehicle Management</span>
+            </a>
+            <a href="insurance_monitor.html" class="nav-item">
+                <i class="ri-shield-check-line"></i><span class="nav-label">Insurance Monitor</span>
+            </a>
+            <a href="audits.html" class="nav-item">
+                <i class="ri-file-list-3-line"></i><span class="nav-label">Audit Logs</span>
+            </a>
+            <div style="flex:1"></div>
+            <a href="#" class="nav-item active">
+                <i class="ri-settings-4-line"></i><span class="nav-label">Settings</span>
+            </a>
+            <a href="account.html" class="nav-item">
+                <i class="ri-user-line"></i><span class="nav-label">Account</span>
+            </a>
+            <a href="#" class="nav-item" onclick="event.preventDefault();logout()" style="color: #EF4444;">
+                <i class="ri-logout-box-r-line"></i><span class="nav-label">Logout</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        
+        <header class="settings-header">
+            <div class="header-text">
+                <h1>Settings</h1>
+            </div>
+            <button class="btn-save">Save Changes</button>
+        </header>
+
+        <div class="settings-container">
+            
+            <!-- NAV -->
+            <div class="settings-nav">
+                <div class="nav-section-label">General</div>
+                <a onclick="scrollToSection('profile')" class="settings-link active">Company Profile</a>
+                <a onclick="scrollToSection('team')" class="settings-link">Team Members</a>
+                
+                <div class="nav-section-label">System</div>
+                <a onclick="scrollToSection('security')" class="settings-link">Security & Auth</a>
+                <a onclick="scrollToSection('notifications')" class="settings-link">Notifications</a>
+                <a onclick="scrollToSection('api')" class="settings-link">API & Integrations</a>
+            </div>
+
+            <!-- PANEL -->
+            <div class="settings-panel">
+
+                <!-- SECTION: PROFILE -->
+                <div id="profile" class="settings-section">
+                    <div class="section-header">
+                        <h2>Company Profile</h2>
+                        <p>Manage your fleet's public identity and billing details.</p>
+                    </div>
+
+                    <div class="card gs-fade">
+                        <div class="avatar-upload">
+                            <div class="avatar-circle">
+                                <i class="ri-building-4-line"></i>
+                            </div>
+                            <div>
+                                <h3 style="font-size: 1rem; margin-bottom: 4px;">Company Logo</h3>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px;">Recommended 400x400px</p>
+                                <button class="upload-trigger">Upload New</button>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Company Name</label>
+                                <input type="text" class="input-field" value="Global Logistics Inc.">
+                            </div>
+                            <div class="form-group">
+                                <label>Tax ID / GSTIN</label>
+                                <input type="text" class="input-field" value="GST-88492-XX">
+                            </div>
+                            <div class="form-group">
+                                <label>Support Email</label>
+                                <input type="email" class="input-field" value="ops@globallogistics.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number</label>
+                                <input type="text" class="input-field" value="+1 (555) 000-0000">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: SECURITY -->
+                <div id="security" class="settings-section">
+                    <div class="section-header">
+                        <h2>Security</h2>
+                        <p>Manage access protocols and authentication.</p>
+                    </div>
+
+                    <div class="card gs-fade">
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Two-Factor Authentication (2FA)</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Require OTP for all admin logins.</p>
+                            </div>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">Force Session Timeout</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Auto-logout after 15 minutes of inactivity.</p>
+                            </div>
+                            <div class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                        <div class="toggle-row">
+                            <div>
+                                <h4 style="font-size: 0.95rem;">IP Whitelisting</h4>
+                                <p style="font-size: 0.85rem; color: var(--text-secondary);">Only allow access from corporate VPN.</p>
+                            </div>
+                            <div class="toggle-switch" onclick="this.classList.toggle('active')"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: API -->
+                <div id="api" class="settings-section">
+                    <div class="section-header">
+                        <h2>API & Webhooks</h2>
+                        <p>Manage programmatic access to the TruFleet Engine.</p>
+                    </div>
+
+                    <div class="card gs-fade">
+                        <div class="form-group">
+                            <label>Production API Key</label>
+                            <div class="api-box">
+                                <span class="key-hidden">sk_live_51M...8q2</span>
+                                <button style="background: none; border: none; color: var(--accent-blue); cursor: pointer; font-weight: 600;">Copy</button>
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px;">Keep this key secret. Hover to reveal.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>Webhook URL (Dispatch Events)</label>
+                            <input type="text" class="input-field" value="https://api.yourcompany.com/webhooks/trufleet">
+                        </div>
+                    </div>
+
+                    <div class="card danger-card gs-fade">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="color: #991B1B;">Rotate API Keys</h4>
+                                <p style="font-size: 0.85rem; color: #B91C1C;">This will invalidate all current keys immediately.</p>
+                            </div>
+                            <button class="btn-danger">Regenerate Keys</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: TEAM -->
+                <div id="team" class="settings-section">
+                    <div class="section-header">
+                        <div style="display: flex; justify-content: space-between;">
+                            <div>
+                                <h2>Team Members</h2>
+                                <p>Manage roles and permissions.</p>
+                            </div>
+                            <button style="background: #F1F5F9; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer;">+ Invite</button>
+                        </div>
+                    </div>
+
+                    <div class="card gs-fade" style="padding: 0;">
+                        <div style="padding: 1rem 2rem;">
+                            <!-- Team Member 1 -->
+                            <div class="team-row">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="avatar-circle" style="width: 40px; height: 40px; font-size: 0.9rem; background: #0F172A; color: white;">JD</div>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.95rem;">John Doe</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-secondary);">john@company.com</div>
+                                    </div>
+                                </div>
+                                <span class="role-badge">Admin</span>
+                                <i class="ri-more-2-fill" style="color: var(--text-tertiary); cursor: pointer;"></i>
+                            </div>
+
+                            <!-- Team Member 2 -->
+                            <div class="team-row" style="border-bottom: none;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="avatar-circle" style="width: 40px; height: 40px; font-size: 0.9rem; background: #3B82F6; color: white;">SM</div>
+                                    <div>
+                                        <div style="font-weight: 600; font-size: 0.95rem;">Sarah Miller</div>
+                                        <div style="font-size: 0.8rem; color: var(--text-secondary);">sarah@company.com</div>
+                                    </div>
+                                </div>
+                                <span class="role-badge" style="background: #DCFCE7; color: #166534;">Dispatcher</span>
+                                <i class="ri-more-2-fill" style="color: var(--text-tertiary); cursor: pointer;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Animation
+        gsap.registerPlugin(ScrollToPlugin);
+
+        gsap.from(".gs-fade", {
+            y: 30, duration: 0.8, stagger: 0.1, ease: "power3.out"
+        });
+
+        // Scroll Navigation Logic
+        function scrollToSection(id) {
+            // UI Update
+            document.querySelectorAll('.settings-link').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Scroll
+            gsap.to('.settings-panel', {
+                duration: 0.8,
+                scrollTo: { y: `#${id}`, offsetY: 20 },
+                ease: "power3.inOut"
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Confidence in Every Mile</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- Animation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        /* 
+         * TRUFLEET DESIGN SYSTEM 
+         * Based on PRD Version 1.0
+         */
+
+        :root {
+            /* Color Palette */
+            --trufleet-navy: #0A1628;
+            --trufleet-blue: #1E3A8A;
+            --trufleet-cyan: #06B6D4;
+            --trufleet-gold: #F59E0B;
+            
+            /* Neutrals */
+            --background-dark: #0F172A;
+            --surface-elevated: #1E293B;
+            --text-primary: #F1F5F9;
+            --text-secondary: #94A3B8;
+            --border-subtle: #334155;
+
+            /* Typography */
+            --font-display: 'Archivo', sans-serif;
+            --font-primary: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            /* Spacing */
+            --space-4: 1rem;
+            --space-8: 2rem;
+            --space-12: 3rem;
+            --space-20: 5rem;
+            --space-24: 6rem;
+
+            /* Effects */
+            --shadow-glow: 0 0 40px rgba(6, 182, 212, 0.3);
+            --glass-bg: rgba(15, 23, 42, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--background-dark);
+            color: var(--text-primary);
+            font-family: var(--font-primary);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: color 0.3s ease;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        /* Utility Classes */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 var(--space-4);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #fff 0%, var(--trufleet-cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+
+        /* 
+         * COMPONENTS 
+         */
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 0.02em;
+        }
+
+        .btn-primary {
+            background: var(--trufleet-cyan);
+            color: var(--trufleet-navy);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+            background: #fff;
+        }
+
+        .btn-outline {
+            border: 1px solid var(--border-subtle);
+            background: transparent;
+            color: var(--text-primary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--trufleet-cyan);
+            color: var(--trufleet-cyan);
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
+        }
+
+        .navbar.scrolled {
+            padding: 1rem 0;
+            background: rgba(10, 22, 40, 0.85);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo i {
+            color: var(--trufleet-cyan);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-item {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .nav-item:hover {
+            color: #fff;
+        }
+
+        /* 
+         * SECTIONS 
+         */
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            width: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .hero-video-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .hero-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.6);
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(10, 22, 40, 0.3), rgba(10, 22, 40, 0.9));
+            z-index: 0;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            padding-top: 5vh;
+        }
+
+        .hero-tagline {
+            font-family: var(--font-mono);
+            color: var(--trufleet-cyan);
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+            display: block;
+            opacity: 0; /* JS Animation */
+        }
+
+        .hero-title {
+            font-size: 4.5rem;
+            font-weight: 700;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+            opacity: 0; /* JS Animation */
+        }
+
+        .hero-desc {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin-bottom: 3rem;
+            opacity: 0; /* JS Animation */
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            opacity: 0; /* JS Animation */
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            z-index: 2;
+            opacity: 0.7;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateX(-50%) translateY(0);}
+            40% {transform: translateX(-50%) translateY(-10px);}
+            60% {transform: translateX(-50%) translateY(-5px);}
+        }
+
+        /* Value Prop Section */
+        .section {
+            padding: var(--space-20) 0;
+            position: relative;
+        }
+
+        .grid-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-12);
+            align-items: center;
+        }
+
+        .feature-block {
+            padding: var(--space-8);
+            border-left: 1px solid var(--border-subtle);
+            background: linear-gradient(90deg, rgba(30, 41, 59, 0.3) 0%, rgba(30, 41, 59, 0) 100%);
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-block:hover {
+            border-left-color: var(--trufleet-cyan);
+            transform: translateX(10px);
+        }
+
+        .feature-icon {
+            font-size: 2rem;
+            color: var(--trufleet-cyan);
+            margin-bottom: 1rem;
+        }
+
+        .section-header {
+            margin-bottom: var(--space-12);
+        }
+
+        .section-label {
+            color: var(--trufleet-gold);
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        /* 3D Cards Section */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            perspective: 1000px;
+        }
+
+        .card-3d {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: 1rem;
+            padding: 3rem 2rem;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: all 0.4s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .card-3d::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--trufleet-cyan), var(--trufleet-blue));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card-3d:hover {
+            transform: translateY(-10px) rotateX(2deg);
+            box-shadow: var(--shadow-glow);
+            border-color: var(--trufleet-blue);
+        }
+
+        .card-3d:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(6, 182, 212, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--trufleet-cyan);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Stats Section */
+        .stats-wrapper {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 3rem 0;
+            margin-top: 4rem;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-family: var(--font-mono);
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Interactive CTA Section */
+        .cta-section {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            text-align: center;
+            min-height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .interaction-box {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-subtle);
+            border-radius: 1rem;
+            padding: 3rem;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+        }
+
+        .radio-option {
+            background: var(--background-dark);
+            border: 1px solid var(--border-subtle);
+            padding: 1rem 2rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .radio-option.selected {
+            background: var(--trufleet-cyan);
+            color: var(--trufleet-navy);
+            border-color: var(--trufleet-cyan);
+            font-weight: 600;
+        }
+
+        .email-form {
+            height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .email-form.active {
+            height: auto;
+            opacity: 1;
+            margin-top: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border-subtle);
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            color: #fff;
+            font-family: var(--font-primary);
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--trufleet-cyan);
+        }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 4rem 0;
+            background: #050b14;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 4rem;
+        }
+
+        .footer-brand p {
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            max-width: 300px;
+        }
+
+        .footer-col h4 {
+            color: #fff;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 0.75rem;
+        }
+
+        .footer-col a:hover {
+            color: var(--trufleet-cyan);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.5rem; }
+            .grid-split { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+            .stats-wrapper { flex-direction: column; gap: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-content">
+            <a href="#" class="logo">
+                <i class="ri-truck-fill"></i>
+                TRUFLEET
+            </a>
+            
+            <div class="nav-links">
+                <a href="#features" class="nav-item">Features</a>
+                <a href="#solution" class="nav-item">Solutions</a>
+                <a href="#pricing" class="nav-item">Pricing</a>
+                <a href="register.html" class="nav-item">Sign In</a>
+                <a href="register.html" class="btn btn-primary">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-video-container">
+            <!-- Using a high-quality placeholder video link for demonstration purposes -->
+            <!-- In production, this would be local asset: assets/videos/fleet.mp4 -->
+            <video autoplay loop muted playsinline poster="https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg">
+                <source src="https://player.vimeo.com/external/371843343.sd.mp4?s=d44840e53528b6d8574d6100570b540203f56d95&profile_id=164&oauth2_token_id=57447761" type="video/mp4">
+            </video>
+        </div>
+        <div class="hero-overlay"></div>
+        
+        <div class="container hero-content">
+            <span class="hero-tagline">Confidence in Every Mile</span>
+            <h1 class="hero-title">
+                The Operating System<br>
+                <span class="text-gradient">For Modern Logistics</span>
+            </h1>
+            <p class="hero-desc">
+                Revolutionizing fleet management with cinematic intelligence, 
+                real-time compliance, and unmatched reliability. 
+                Manage your fleet with the precision of an orchestra.
+            </p>
+            <div class="hero-actions">
+                <a href="register.html" class="btn btn-primary">Start Transformation</a>
+                <a href="#demo" class="btn btn-outline"> <i class="ri-play-circle-line" style="margin-right:8px"></i> Watch Film</a>
+            </div>
+        </div>
+
+        <div class="scroll-indicator">
+            <span>Scroll to Explore</span>
+            <i class="ri-arrow-down-line"></i>
+        </div>
+    </section>
+
+    <!-- Value Proposition Section -->
+    <section class="section" id="solution">
+        <div class="container">
+            <div class="grid-split">
+                <div class="content-side gs-reveal-left">
+                    <span class="section-label">Vision & Philosophy</span>
+                    <h2 class="section-header" style="font-size: 3rem;">Orchestrating Trust in <span class="text-gradient">Real-Time</span></h2>
+                    <p class="text-secondary" style="font-size: 1.1rem; margin-bottom: 2rem;">
+                        TruFleet represents a paradigm shift. We don't just track vehicles; we construct a digital ecosystem that elevates every interaction into a moment of confidence.
+                    </p>
+                    
+                    <div class="feature-block">
+                        <i class="ri-shield-check-line feature-icon"></i>
+                        <h3>Real-time Compliance</h3>
+                        <p class="text-secondary">Monitor insurance, registration, and operational status across your entire fleet instantly.</p>
+                    </div>
+
+                    <div class="feature-block">
+                        <i class="ri-cpu-line feature-icon"></i>
+                        <h3>Intelligent Dispatch</h3>
+                        <p class="text-secondary">Smart authorization engine prevents violations before they happen with predictive blocking.</p>
+                    </div>
+                </div>
+                
+                <div class="visual-side gs-reveal-right">
+                    <!-- Abstract representation of the dashboard -->
+                    <div style="background: var(--surface-elevated); border: 1px solid var(--border-subtle); border-radius: 1rem; padding: 2rem; box-shadow: var(--shadow-glow); position: relative;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom: 2rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+                            <div style="width: 100px; height: 10px; background: var(--border-subtle); border-radius: 4px;"></div>
+                            <div style="width: 30px; height: 30px; background: var(--trufleet-blue); border-radius: 50%;"></div>
+                        </div>
+                        <div style="display: grid; gap: 1rem;">
+                            <div style="height: 60px; background: rgba(6, 182, 212, 0.1); border-left: 4px solid var(--trufleet-cyan); border-radius: 4px; display: flex; align-items: center; padding: 0 1rem;">
+                                <span style="color: var(--trufleet-cyan); font-family: var(--font-mono);">TN-45-AB-1234 • AUTHORIZED</span>
+                            </div>
+                            <div style="height: 60px; background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; border-radius: 4px; display: flex; align-items: center; padding: 0 1rem;">
+                                <span style="color: #ef4444; font-family: var(--font-mono);">KA-05-CD-5678 • DENIED (INSURANCE)</span>
+                            </div>
+                            <div style="height: 60px; background: rgba(6, 182, 212, 0.1); border-left: 4px solid var(--trufleet-cyan); border-radius: 4px; display: flex; align-items: center; padding: 0 1rem;">
+                                <span style="color: var(--trufleet-cyan); font-family: var(--font-mono);">MH-12-EF-9012 • AUTHORIZED</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-wrapper gs-fade-up">
+                <div class="stat-item">
+                    <div class="stat-number text-gradient">99.9%</div>
+                    <div class="stat-label">Uptime Reliability</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number text-gradient">0ms</div>
+                    <div class="stat-label">Compliance Delay</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number text-gradient">$100B+</div>
+                    <div class="stat-label">Asset Value Managed</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="section" id="features" style="background: #0B1120;">
+        <div class="container">
+            <div class="section-header" style="text-align: center;">
+                <span class="section-label">The Ecosystem</span>
+                <h2 style="font-size: 3rem;">A Unified <span class="text-gradient">Platform</span></h2>
+            </div>
+
+            <div class="cards-grid">
+                <!-- Admin Card -->
+                <div class="card-3d gs-card">
+                    <div class="card-icon">
+                        <i class="ri-building-4-line"></i>
+                    </div>
+                    <h3>Fleet Admin Dashboard</h3>
+                    <p class="text-secondary" style="margin-top: 1rem;">
+                        The command center where clarity meets control. Real-time fleet tracking, insurance management, and audit logs in one cinematic interface.
+                    </p>
+                    <a href="dashboard.html" style="color: var(--trufleet-cyan); margin-top: 1.5rem; display: inline-block; font-weight: 500;">Explore Admin →</a>
+                </div>
+
+                <!-- Owner Card -->
+                <div class="card-3d gs-card">
+                    <div class="card-icon">
+                        <i class="ri-truck-line"></i>
+                    </div>
+                    <h3>Truck Owner Portal</h3>
+                    <p class="text-secondary" style="margin-top: 1rem;">
+                        Transparency for partners. View vehicle status, upload compliance documents, and track earnings without operational friction.
+                    </p>
+                    <a href="vehicle_management.html" style="color: var(--trufleet-cyan); margin-top: 1.5rem; display: inline-block; font-weight: 500;">View Portal →</a>
+                </div>
+
+                <!-- Dispatch Card -->
+                <div class="card-3d gs-card">
+                    <div class="card-icon">
+                        <i class="ri-flow-chart"></i>
+                    </div>
+                    <h3>Dispatch Control</h3>
+                    <p class="text-secondary" style="margin-top: 1rem;">
+                        The decision engine. Cryptographic verification of vehicles before they move. If insurance is expired, the gate stays closed.
+                    </p>
+                    <a href="audits.html" style="color: var(--trufleet-cyan); margin-top: 1.5rem; display: inline-block; font-weight: 500;">See Decision Engine →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive CTA -->
+    <section class="section cta-section" id="cta">
+        <div class="interaction-box gs-scale-up">
+            <h2>Ready to Transform Your Fleet?</h2>
+            <p class="text-secondary" style="margin-top: 1rem;">Experience the future of logistics management today.</p>
+            
+            <div class="radio-group">
+                <div class="radio-option" onclick="selectInterest(true, this)">
+                    Yes, I'm Interested
+                </div>
+                <div class="radio-option" onclick="selectInterest(false, this)">
+                    Not Right Now
+                </div>
+            </div>
+
+            <form class="email-form" id="emailForm" onsubmit="handleSub(event)">
+                <div class="input-group">
+                    <input type="email" class="input-field" placeholder="Enter your work email" required>
+                    <button type="submit" class="btn btn-primary">Get Early Access</button>
+                </div>
+            </form>
+            
+            <div id="altCTA" class="email-form">
+                <p class="text-secondary">No worries. Follow our journey.</p>
+                <button class="btn btn-outline" style="margin-top: 1rem;">Read the Whitepaper</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <i class="ri-truck-fill"></i>
+                        TRUFLEET
+                    </a>
+                    <p>
+                        Building the world's most sophisticated fleet management operating system. 
+                        Confidence in every mile.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Platform</h4>
+                    <ul>
+                        <li><a href="#">Admin Console</a></li>
+                        <li><a href="#">Dispatcher View</a></li>
+                        <li><a href="#">Owner Portal</a></li>
+                        <li><a href="#">Security</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Press</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="#">Privacy</a></li>
+                        <li><a href="#">Terms</a></li>
+                        <li><a href="#">Compliance</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div style="border-top: 1px solid var(--border-subtle); margin-top: 4rem; padding-top: 2rem; text-align: center; color: var(--text-secondary); font-size: 0.8rem;">
+                © 2026 TruFleet Inc. All rights reserved. Version 1.0.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize GSAP
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Navbar Scroll Effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Hero Animations (Sequence)
+        const heroTl = gsap.timeline();
+        
+        heroTl.to('.hero-tagline', { y: 0, opacity: 1, duration: 0.8, ease: "power2.out", delay: 0.5 })
+              .to('.hero-title', { y: 0, opacity: 1, duration: 1, ease: "power4.out" }, "-=0.4")
+              .to('.hero-desc', { y: 0, opacity: 1, duration: 0.8, ease: "power2.out" }, "-=0.6")
+              .to('.hero-actions', { y: 0, opacity: 1, duration: 0.8, ease: "back.out(1.7)" }, "-=0.6");
+
+        // Scroll Trigger Animations
+        
+        // Split Content Reveal
+        gsap.from('.gs-reveal-left', {
+            scrollTrigger: {
+                trigger: '.gs-reveal-left',
+                start: 'top 80%',
+            },
+            x: -50,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out"
+        });
+
+        gsap.from('.gs-reveal-right', {
+            scrollTrigger: {
+                trigger: '.gs-reveal-right',
+                start: 'top 80%',
+            },
+            x: 50,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out"
+        });
+
+        // Cards Stagger
+        gsap.from('.gs-card', {
+            scrollTrigger: {
+                trigger: '.cards-grid',
+                start: 'top 85%',
+            },
+            y: 50,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.2,
+            ease: "power2.out"
+        });
+
+        // Stats Count Up (Simulated visual pop)
+        gsap.from('.stat-item', {
+            scrollTrigger: {
+                trigger: '.stats-wrapper',
+                start: 'top 90%',
+            },
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "back.out(1.2)"
+        });
+
+        // CTA Interaction Logic
+        function selectInterest(interested, element) {
+            // UI Update
+            document.querySelectorAll('.radio-option').forEach(el => el.classList.remove('selected'));
+            element.classList.add('selected');
+
+            const emailForm = document.getElementById('emailForm');
+            const altCTA = document.getElementById('altCTA');
+
+            if (interested) {
+                altCTA.classList.remove('active');
+                setTimeout(() => emailForm.classList.add('active'), 200);
+            } else {
+                emailForm.classList.remove('active');
+                setTimeout(() => altCTA.classList.add('active'), 200);
+            }
+        }
+
+        function handleSub(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerText;
+            
+            // Loading State
+            btn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Processing';
+            btn.style.opacity = '0.7';
+
+            // Simulate API call
+            setTimeout(() => {
+                btn.innerHTML = '<i class="ri-check-line"></i> Welcome Aboard';
+                btn.style.background = '#10B981';
+                btn.style.opacity = '1';
+                
+                // Confetti or Success Logic here
+                gsap.to(e.target, { y: -10, duration: 0.2, yoyo: true, repeat: 1 });
+            }, 1500);
+        }
+    </script>
+</body>
+</html>

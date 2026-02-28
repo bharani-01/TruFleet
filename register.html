@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet ID | Secure Access</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- TruFleet API Client -->
+    <script src="trufleet-api.js"></script>
+
+    <!-- Motion Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Palette: Institutional Trust */
+            --bg-color: #F8FAFC;
+            --surface-color: #FFFFFF;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --accent-color: #0F172A; /* Deep Navy */
+            --highlight-color: #3B82F6; /* Electric Blue */
+            
+            /* Measurements */
+            --radius-xl: 24px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+            
+            /* Physics */
+            --shadow-soft: 0 20px 40px -10px rgba(15, 23, 42, 0.05);
+            --shadow-sharp: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+            --ease-elastic: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-image: radial-gradient(circle at 100% 0%, #E2E8F0 0%, transparent 25%), 
+                              radial-gradient(circle at 0% 100%, #E2E8F0 0%, transparent 25%);
+        }
+
+        /* The Monolith Container */
+        .auth-container {
+            width: 1000px;
+            height: 650px;
+            background: var(--surface-color);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-soft);
+            display: grid;
+            grid-template-columns: 0.8fr 1.2fr;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+
+        /* LEFT SIDE: Dynamic Visual Context */
+        .visual-panel {
+            background: var(--accent-color);
+            position: relative;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: white;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+
+        /* Abstract Dynamic Backgrounds */
+        .visual-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.6;
+            z-index: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .bg-admin {
+            background: linear-gradient(135deg, #0F172A 0%, #1e293b 100%);
+        }
+        
+        /* Simulated Mesh Gradient for Driver */
+        .bg-driver {
+            background: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                        radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                        radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            opacity: 0; 
+        }
+
+        .visual-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand-logo {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .context-text h2 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 2.5rem;
+            line-height: 1.1;
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .context-text p {
+            color: rgba(255,255,255,0.7);
+            font-size: 1rem;
+            max-width: 300px;
+        }
+
+        .stat-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            margin-top: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* RIGHT SIDE: Interaction Layer */
+        .form-panel {
+            padding: 3.5rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Role Selector (The "Something Different") */
+        .role-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 2.5rem;
+        }
+
+        .role-card {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #E2E8F0;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all 0.2s var(--ease-elastic);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+        }
+
+        .role-card:hover {
+            border-color: var(--highlight-color);
+            background: #F8FAFC;
+        }
+
+        .role-card.active {
+            border-color: var(--accent-color);
+            background: var(--text-main);
+            color: white;
+            box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.2);
+        }
+
+        .role-card i { font-size: 1.25rem; }
+        .role-card span { font-size: 0.8rem; font-weight: 500; }
+
+        /* Segmented Toggle (Sign In / Register) */
+        .auth-toggle {
+            background: #F1F5F9;
+            padding: 4px;
+            border-radius: 12px;
+            display: flex;
+            position: relative;
+            margin-bottom: 2rem;
+            width: fit-content;
+        }
+
+        .toggle-btn {
+            padding: 8px 24px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            position: relative;
+            z-index: 2;
+            transition: color 0.3s ease;
+            background: transparent;
+            border: none;
+        }
+
+        .toggle-btn.active {
+            color: var(--text-main);
+        }
+
+        /* The sliding white background for the toggle */
+        .toggle-slider {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            height: calc(100% - 8px);
+            width: 50%; /* JS will adjust width/position */
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sharp);
+            transition: transform 0.3s var(--ease-elastic), width 0.3s ease;
+            z-index: 1;
+        }
+
+        /* Form Inputs */
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem; /* Space for icon */
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: var(--radius-sm);
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+
+        .input-field:focus {
+            background: white;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.05);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .input-group:focus-within .input-icon {
+            color: var(--accent-color);
+        }
+
+        /* The "Company ID" field that only appears for Admins */
+        .conditional-field {
+            height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.4s var(--ease-elastic);
+            margin-bottom: 0;
+        }
+
+        .conditional-field.visible {
+            height: auto;
+            opacity: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Action Buttons */
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.2);
+        }
+
+        .btn-social {
+            width: 100%;
+            padding: 0.75rem;
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: var(--radius-sm);
+            color: var(--text-main);
+            font-weight: 500;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 1rem;
+            transition: background 0.2s ease;
+        }
+
+        .btn-social:hover {
+            background: #F8FAFC;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin: 1.5rem 0;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .divider span { padding: 0 10px; }
+
+        .forgot-pass {
+            display: block;
+            text-align: right;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+            cursor: pointer;
+        }
+        
+        .forgot-pass:hover { color: var(--accent-color); }
+
+        /* Demo Credentials Box */
+        .demo-box {
+            background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+            border: 1px solid #93C5FD;
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+        }
+
+        .demo-box i {
+            color: #3B82F6;
+            font-size: 1.25rem;
+            margin-top: 2px;
+        }
+
+        .demo-content {
+            flex: 1;
+        }
+
+        .demo-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1E40AF;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-creds {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #1E3A8A;
+            line-height: 1.6;
+        }
+
+        .demo-creds strong {
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .auth-container { grid-template-columns: 1fr; height: auto; max-width: 500px; }
+            .visual-panel { display: none; }
+            .form-panel { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        
+        <!-- LEFT SIDE: Dynamic Visuals -->
+        <div class="visual-panel" id="visualPanel">
+            <div class="visual-bg bg-admin" id="bgAdmin"></div>
+            <div class="visual-bg bg-driver" id="bgDriver"></div>
+            
+            <div class="visual-content">
+                <div class="brand-logo">
+                    <i class="ri-truck-fill"></i> TRUFLEET
+                </div>
+            </div>
+
+            <div class="visual-content context-text">
+                <h2 id="visualHeading">Command Center</h2>
+                <p id="visualDesc">Orchestrate your fleet with real-time compliance and predictive authorization.</p>
+                
+                <div class="stat-pill" id="visualStat">
+                    <i class="ri-shield-check-line"></i> Secure 256-bit Encrypted
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT SIDE: The Interface -->
+        <div class="form-panel">
+            
+            <!-- Context Switcher -->
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.5rem; display: block;">SELECT ROLE</label>
+            <div class="role-selector">
+                <div class="role-card active" onclick="setRole('admin', this)">
+                    <i class="ri-building-4-line"></i>
+                    <span>Fleet Admin</span>
+                </div>
+                <div class="role-card" onclick="setRole('dispatcher', this)">
+                    <i class="ri-map-pin-time-line"></i>
+                    <span>Dispatcher</span>
+                </div>
+                <div class="role-card" onclick="setRole('owner', this)">
+                    <i class="ri-steering-2-line"></i>
+                    <span>Truck Owner</span>
+                </div>
+            </div>
+
+            <!-- Mode Toggle (Login/Register) -->
+            <div class="auth-toggle">
+                <div class="toggle-slider" id="toggleSlider"></div>
+                <button class="toggle-btn active" id="btnLogin" onclick="setMode('login')">Sign In</button>
+                <button class="toggle-btn" id="btnRegister" onclick="setMode('register')">Request Access</button>
+            </div>
+
+            <!-- Demo Credentials Info -->
+            <div class="demo-box" id="demoBox">
+                <i class="ri-information-line"></i>
+                <div class="demo-content">
+                    <div class="demo-title">Demo Credentials</div>
+                    <div class="demo-creds">
+                        <strong>Email:</strong> admin@trufleet.com<br>
+                        <strong>Password:</strong> admin123
+                    </div>
+                </div>
+            </div>
+
+            <form id="authForm" onsubmit="event.preventDefault();">
+                <!-- Conditional Fields (Based on Role/Mode) -->
+                
+                <!-- Company Name (Only for Admin Register) -->
+                <div class="conditional-field" id="fieldCompany">
+                    <div class="input-group">
+                        <input id="fieldCompanyInput" type="text" class="input-field" placeholder="Company Legal Name">
+                        <i class="ri-building-2-line input-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Full Name (Register only) -->
+                <div class="conditional-field" id="fieldName">
+                    <div class="input-group">
+                        <input id="fieldNameInput" type="text" class="input-field" placeholder="Full Legal Name">
+                        <i class="ri-user-line input-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Email (Always Visible) -->
+                <div class="input-group">
+                    <input id="emailInput" type="email" class="input-field" placeholder="Work Email Address">
+                    <i class="ri-mail-line input-icon"></i>
+                </div>
+
+                <!-- License Number (Only for Owner/Driver) -->
+                <div class="conditional-field" id="fieldLicense">
+                    <div class="input-group">
+                        <input id="fieldLicenseInput" type="text" class="input-field" placeholder="Vehicle Registration No.">
+                        <i class="ri-truck-line input-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Password -->
+                <div class="input-group" style="margin-bottom: 0.5rem;">
+                    <input id="passwordInput" type="password" class="input-field" placeholder="Password">
+                    <i class="ri-lock-line input-icon"></i>
+                </div>
+                
+                <a class="forgot-pass" id="forgotLink">Forgot password?</a>
+                
+                <button class="btn-submit" style="margin-top: 1.5rem;" onclick="handleLogin()">
+                    <span id="submitText">Enter Dashboard</span>
+                    <i class="ri-arrow-right-line"></i>
+                </button>
+            </form>
+
+            <div class="divider"><span>Or continue with</span></div>
+
+            <button class="btn-social">
+                <i class="ri-google-fill" style="color: #DB4437;"></i> Google Workspace
+            </button>
+            <button class="btn-social">
+                <i class="ri-microsoft-fill" style="color: #00A4EF;"></i> Microsoft Azure AD
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Only redirect if a real session exists (isLoggedIn checks the actual key, no fallback)
+        if (TruFleet.isLoggedIn()) {
+            window.location.href = 'dashboard.html';
+        }
+
+        // State Management
+        let currentRole = 'admin';
+        let currentMode = 'login'; // 'login' or 'register'
+
+        // DOM Elements
+        const toggleSlider = document.getElementById('toggleSlider');
+        const btnLogin     = document.getElementById('btnLogin');
+        const btnRegister  = document.getElementById('btnRegister');
+        
+        // Content Elements
+        const visualHeading = document.getElementById('visualHeading');
+        const visualDesc    = document.getElementById('visualDesc');
+        const visualStat    = document.getElementById('visualStat');
+        const bgAdmin       = document.getElementById('bgAdmin');
+        const bgDriver      = document.getElementById('bgDriver');
+
+        // Fields
+        const fieldCompany = document.getElementById('fieldCompany');
+        const fieldName    = document.getElementById('fieldName');
+        const fieldLicense = document.getElementById('fieldLicense');
+        const submitText   = document.getElementById('submitText');
+        const forgotLink   = document.getElementById('forgotLink');
+        const demoBox      = document.getElementById('demoBox');
+
+        function setMode(mode) {
+            currentMode = mode;
+            if (mode === 'login') {
+                toggleSlider.style.transform = 'translateX(0)';
+                toggleSlider.style.width = btnLogin.offsetWidth + 'px';
+                btnLogin.classList.add('active');
+                btnRegister.classList.remove('active');
+                submitText.innerText = 'Enter Dashboard';
+                fieldCompany.classList.remove('visible');
+                fieldName.classList.remove('visible');
+                forgotLink.style.display = 'block';
+                demoBox.style.display = 'flex';
+            } else {
+                toggleSlider.style.transform = `translateX(${btnLogin.offsetWidth}px)`;
+                toggleSlider.style.width = btnRegister.offsetWidth + 'px';
+                btnRegister.classList.add('active');
+                btnLogin.classList.remove('active');
+                submitText.innerText = 'Create Account';
+                fieldName.classList.add('visible');
+                forgotLink.style.display = 'none';
+                demoBox.style.display = 'none';
+                if (currentRole === 'admin') fieldCompany.classList.add('visible');
+            }
+        }
+
+        function setRole(role, element) {
+            currentRole = role;
+            document.querySelectorAll('.role-card').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            const tl = gsap.timeline();
+            tl.to('.context-text', { y: 10, duration: 0.2, onComplete: () => {
+                if (role === 'admin') {
+                    visualHeading.innerText = "Command Center";
+                    visualDesc.innerText = "Orchestrate your fleet with real-time compliance and predictive authorization.";
+                    visualStat.innerHTML = '<i class="ri-shield-check-line"></i> Secure 256-bit Encrypted';
+                    bgAdmin.style.opacity = 0.8;
+                    bgDriver.style.opacity = 0;
+                    if (currentMode === 'register') fieldCompany.classList.add('visible');
+                    fieldLicense.classList.remove('visible');
+                } else if (role === 'owner') {
+                    visualHeading.innerText = "Partner Portal";
+                    visualDesc.innerText = "Track your fleet's earnings, manage insurance, and receive instant payouts.";
+                    visualStat.innerHTML = '<i class="ri-wallet-3-line"></i> Next-Day Payouts Active';
+                    bgAdmin.style.opacity = 0;
+                    bgDriver.style.opacity = 1;
+                    fieldCompany.classList.remove('visible');
+                    fieldLicense.classList.remove('visible');
+                } else {
+                    visualHeading.innerText = "Dispatch Hub";
+                    visualDesc.innerText = "Validate outgoing shipments and generate cryptographic authorization keys.";
+                    visualStat.innerHTML = '<i class="ri-time-line"></i> 99.9% Uptime';
+                    bgAdmin.style.opacity = 0.5;
+                    bgDriver.style.opacity = 0;
+                    fieldCompany.classList.remove('visible');
+                    fieldLicense.classList.remove('visible');
+                }
+            }}).to('.context-text', { y: 0, duration: 0.3 });
+        }
+
+        // Initialize Toggle Slider Width
+        window.addEventListener('load', () => {
+            toggleSlider.style.width = btnLogin.offsetWidth + 'px';
+        });
+
+        function showFormError(msg) {
+            alert(msg);
+        }
+
+        function setLoading(on) {
+            const btn = document.querySelector('.btn-submit');
+            const txt = document.getElementById('submitText');
+            if (on) {
+                btn.disabled = true;
+                txt.textContent = 'Please wait…';
+            } else {
+                btn.disabled = false;
+                txt.textContent = currentMode === 'login' ? 'Enter Dashboard' : 'Create Account';
+            }
+        }
+
+        async function handleLogin() {
+            const email    = document.getElementById('emailInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+
+            if (!email || !password) {
+                showFormError('Please enter your email and password.');
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                if (currentMode === 'register') {
+                    const name    = (document.getElementById('fieldNameInput').value || '').trim();
+                    const company = (document.getElementById('fieldCompanyInput').value || '').trim();
+                    let result;
+                    try {
+                        result = await TruFleet.register({
+                            name: name || email.split('@')[0],
+                            email, password,
+                            role: currentRole,
+                            company: company || '',
+                        });
+                    } catch (apiErr) {
+                        result = null;
+                    }
+
+                    if (result && result.success) {
+                        window.location.href = 'dashboard.html';
+                        return;
+                    } else {
+                        // Demo fallback: allow any registration
+                        TruFleet.setCurrentUser({
+                            name: name || email.split('@')[0],
+                            initials: (name || email).slice(0, 2).toUpperCase(),
+                            role: currentRole,
+                            email
+                        });
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+
+                } else {
+                    // LOGIN mode
+                    let result;
+                    try {
+                        result = await TruFleet.login({ email, password, role: currentRole });
+                    } catch (apiErr) {
+                        result = null;
+                    }
+
+                    if (result && result.success) {
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+
+                    // Fallback: demo credentials
+                    if (email === 'admin@trufleet.com' && password === 'admin123') {
+                        TruFleet.setCurrentUser({
+                            name: 'Fleet Administrator',
+                            initials: 'FA',
+                            role: 'Fleet Admin',
+                            email
+                        });
+                        window.location.href = 'dashboard.html';
+                        return;
+                    }
+
+                    // Wrong credentials
+                    showFormError((result && result.error) || 'Invalid credentials.\nUse demo login:\nEmail: admin@trufleet.com\nPassword: admin123');
+                    setLoading(false);
+                }
+
+            } catch (err) {
+                console.error('Unexpected auth error:', err);
+                showFormError('An unexpected error occurred. Please try again.');
+                setLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>

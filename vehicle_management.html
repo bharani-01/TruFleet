@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Fleet Registry</title>
+    
+    <!-- Premium Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- TruFleet API Client -->
+    <script src="trufleet-api.js"></script>
+    <script src="trufleet-notif.js"></script>
+    <script src="auth-check.js"></script>
+
+    <!-- GSAP Animation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Consistent Brand System */
+            --bg-body: #F8FAFC; /* Slate 50 */
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0F172A;
+            
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-tertiary: #94A3B8;
+
+            --accent-brand: #0F172A;
+            --accent-blue: #3B82F6;
+            --accent-green: #10B981;
+            --accent-amber: #F59E0B;
+            --accent-red: #EF4444;
+
+            /* Dimensions */
+            --sidebar-width-collapsed: 72px;
+            --sidebar-width-expanded: 260px;
+            --header-height: 80px;
+
+            /* Premium Physics */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-row: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+            --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+            --shadow-drawer: -10px 0 40px rgba(0,0,0,0.05);
+            
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR (Consistent) --- */
+        .sidebar {
+            width: var(--sidebar-width-collapsed);
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 50;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .sidebar:hover { width: var(--sidebar-width-expanded); }
+
+        .brand-icon {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            margin-bottom: 3rem;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .brand-icon i { font-size: 1.75rem; min-width: 32px; color: var(--accent-blue); }
+        .brand-text {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-left: 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar:hover .brand-text { opacity: 1; }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            height: 48px;
+            padding: 0 14px;
+            border-radius: 8px;
+            color: #94A3B8;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item i {
+            font-size: 1.4rem;
+            min-width: 24px;
+        }
+
+        .nav-label {
+            margin-left: 16px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            transition-delay: 0.1s;
+        }
+
+        .sidebar:hover .nav-label {
+            opacity: 1;
+        }
+
+        /* --- MAIN LAYOUT --- */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width-collapsed);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: margin-left 0.4s ease;
+        }
+
+        /* --- HEADER & CONTROLS --- */
+        .top-bar {
+            height: var(--header-height);
+            background: var(--bg-body); /* Blend with body */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .page-title h1 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .action-cluster {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 0.6rem 1.2rem; border-radius: 100px;
+            font-weight: 600; font-size: 0.9rem; cursor: pointer;
+            transition: all 0.2s ease; border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-brand); color: white;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2); }
+
+        .btn-secondary {
+            background: white; border: 1px solid #E2E8F0; color: var(--text-primary);
+        }
+        .btn-secondary:hover { background: #F1F5F9; }
+
+        /* --- FILTER STRIP --- */
+        .filter-strip {
+            padding: 0 2.5rem 1.5rem 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-input {
+            background: white;
+            border: 1px solid #E2E8F0;
+            padding: 10px 16px;
+            border-radius: var(--radius-md);
+            width: 350px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow-sm);
+        }
+        .search-input input { border: none; width: 100%; font-size: 0.95rem; }
+
+        .filter-tabs {
+            background: #E2E8F0;
+            padding: 4px;
+            border-radius: var(--radius-md);
+            display: flex;
+            gap: 4px;
+        }
+
+        .tab {
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .tab.active {
+            background: white;
+            color: var(--text-primary);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* --- VEHICLE LIST (Floating Strips) --- */
+        .list-container {
+            flex: 1;
+            padding: 0 2.5rem 2.5rem 2.5rem;
+            overflow-y: auto;
+        }
+
+        .vehicle-grid-header {
+            display: grid;
+            grid-template-columns: 40px 80px 1.5fr 1fr 1fr 1.5fr 1fr 60px;
+            padding: 0 1.5rem 1rem 1.5rem;
+            color: var(--text-tertiary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            align-items: center;
+        }
+
+        .vehicle-row {
+            background: white;
+            border-radius: var(--radius-lg);
+            display: grid;
+            grid-template-columns: 40px 80px 1.5fr 1fr 1fr 1.5fr 1fr 60px;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.8rem;
+            box-shadow: var(--shadow-row);
+            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+        }
+        .vehicle-row.selected {
+            border-color: var(--accent-blue);
+            background: #EFF6FF;
+        }
+
+        .vehicle-row:hover {
+            transform: scale(1.005) translateY(-2px);
+            box-shadow: var(--shadow-hover);
+            border-color: #E2E8F0;
+            z-index: 2;
+        }
+
+        /* Cell Styling */
+        .v-thumb {
+            width: 48px; height: 48px;
+            border-radius: 10px;
+            background-color: #F1F5F9;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .v-plate {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            border: 1px solid #E2E8F0;
+            background: #F8FAFC;
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .v-type { font-size: 0.8rem; color: var(--text-secondary); }
+
+        .v-owner {
+            display: flex; align-items: center; gap: 8px;
+            font-weight: 500; font-size: 0.9rem;
+        }
+        .owner-avatar {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: var(--accent-blue); color: white;
+            font-size: 0.6rem; display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Insurance Bar */
+        .insurance-cell { display: flex; flex-direction: column; gap: 6px; }
+        .ins-bar-bg {
+            height: 6px; width: 100%;
+            background: #F1F5F9; border-radius: 100px;
+            overflow: hidden;
+        }
+        .ins-bar-fill { height: 100%; border-radius: 100px; }
+        .ins-text { font-size: 0.75rem; color: var(--text-secondary); }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 12px; border-radius: 100px;
+            font-size: 0.8rem; font-weight: 600;
+        }
+        .status-active { background: #DCFCE7; color: #166534; }
+        .status-blocked { background: #FEE2E2; color: #991B1B; }
+
+        .action-btn {
+            width: 32px; height: 32px;
+            border-radius: 50%; border: none; background: transparent;
+            color: var(--text-tertiary); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .action-btn:hover { background: #F1F5F9; color: var(--text-primary); }
+
+        /* --- INSPECTOR DRAWER (Slide Over) --- */
+        .drawer-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent;
+            z-index: 90;
+            display: none;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .drawer {
+            position: fixed; top: 0; right: 0;
+            width: 500px; height: 100%;
+            background: white;
+            z-index: 100;
+            box-shadow: var(--shadow-drawer);
+            transform: translateX(100%);
+            display: flex; flex-direction: column;
+        }
+
+        .drawer-header {
+            padding: 2rem;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .drawer-content {
+            flex: 1; overflow-y: auto; padding: 2rem;
+        }
+
+        .drawer-section { margin-bottom: 2rem; }
+        .section-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+            color: var(--text-tertiary); font-weight: 700; margin-bottom: 1rem;
+        }
+
+        .info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+        }
+        .info-item label { display: block; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .info-item value { font-family: 'Manrope', sans-serif; font-weight: 600; font-size: 1rem; color: var(--text-primary); }
+
+        .doc-card {
+            border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px;
+            display: flex; align-items: center; gap: 12px; margin-bottom: 10px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .doc-card:hover { border-color: var(--accent-blue); background: #F8FAFC; }
+        
+        .drawer-actions {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid #E2E8F0;
+            display: flex; gap: 1rem;
+        }
+
+        /* --- ADD VEHICLE MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent;
+            z-index: 200;
+            display: none; justify-content: center; align-items: center;
+        }
+        .add-modal {
+            background: white;
+            width: 640px;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 25px 60px -12px rgba(0,0,0,0.25);
+            transform: scale(0.95);
+            opacity: 0;
+        }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+        .modal-field { display: flex; flex-direction: column; gap: 6px; }
+        .modal-field label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+        .modal-field input, .modal-field select {
+            padding: 10px 14px; border: 1px solid #E2E8F0; border-radius: 8px;
+            font-family: 'Inter'; font-size: 0.9rem; transition: border-color 0.2s;
+        }
+        .modal-field input:focus, .modal-field select:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .modal-field input.error { border-color: var(--accent-red); }
+        .modal-full { grid-column: 1 / -1; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 4rem 2rem; color: var(--text-tertiary);
+        }
+        .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        .empty-state p { font-size: 1rem; font-weight: 500; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="brand-icon">
+            <i class="ri-truck-fill"></i>
+            <span class="brand-text">TRUFLEET</span>
+        </div>
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-item">
+                <i class="ri-dashboard-3-line"></i><span class="nav-label">Overview</span>
+            </a>
+            <a href="vehicle_management.html" class="nav-item active">
+                <i class="ri-bus-line"></i><span class="nav-label">Vehicle Management</span>
+            </a>
+            <a href="insurance_monitor.html" class="nav-item">
+                <i class="ri-shield-check-line"></i><span class="nav-label">Insurance Monitor</span>
+            </a>
+            <a href="audits.html" class="nav-item">
+                <i class="ri-file-list-3-line"></i><span class="nav-label">Audit Logs</span>
+            </a>
+            <div style="flex: 1"></div>
+            <a href="#" class="nav-item" id="notifBell" onclick="event.preventDefault();toggleNotifPanel()" style="position:relative;">
+                <i class="ri-notification-3-line"></i><span class="nav-label">Notifications</span>
+                <span id="notifBadge" style="position:absolute;top:6px;left:38px;background:#EF4444;color:white;font-size:0.65rem;font-weight:700;min-width:18px;height:18px;display:none;align-items:center;justify-content:center;border-radius:9px;padding:0 5px;">0</span>
+            </a>
+            <a href="setting.html" class="nav-item">
+                <i class="ri-settings-4-line"></i><span class="nav-label">Settings</span>
+            </a>
+            <a href="account.html" class="nav-item">
+                <i class="ri-user-line"></i><span class="nav-label">Account</span>
+            </a>
+            <a href="#" class="nav-item" onclick="event.preventDefault();logout()" style="color: #EF4444;">
+                <i class="ri-logout-box-r-line"></i><span class="nav-label">Logout</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- NOTIFICATION PANEL -->
+    <div id="notifPanel" style="position:fixed;top:0;right:-400px;width:380px;height:100vh;background:white;box-shadow:-10px 0 40px rgba(0,0,0,0.08);z-index:300;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;font-family:'Inter',sans-serif;">
+        <div style="padding:1.5rem;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-family:'Manrope';font-size:1.1rem;">Notifications</h3>
+            <div style="display:flex;gap:8px;">
+                <button onclick="markAllRead()" style="font-size:0.8rem;color:#3B82F6;background:none;border:none;cursor:pointer;font-weight:600;">Mark all read</button>
+                <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94A3B8;"><i class="ri-close-line"></i></button>
+            </div>
+        </div>
+        <div id="notifList" style="flex:1;overflow-y:auto;padding:0.5rem;"></div>
+    </div>
+    <div id="notifOverlay" onclick="toggleNotifPanel()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:299;display:none;"></div>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Fleet Registry</h1>
+            </div>
+            <div class="action-cluster">
+                <button class="btn btn-secondary"><i class="ri-download-line"></i> Export CSV</button>
+                <button class="btn btn-primary"><i class="ri-add-line"></i> Add Vehicle</button>
+            </div>
+        </div>
+
+        <!-- Filter Strip -->
+        <div class="filter-strip">
+            <div class="search-input">
+                <i class="ri-search-line" style="color: #94A3B8;"></i>
+                <input type="text" placeholder="Search VIN, Plate, or Owner...">
+            </div>
+
+            <div class="filter-tabs">
+                <div class="tab active">All Vehicles</div>
+                <div class="tab">Active</div>
+                <div class="tab">Blocked</div>
+                <div class="tab">Expiring Soon</div>
+            </div>
+        </div>
+
+        <!-- Vehicle List -->
+        <div class="list-container">
+            <div class="vehicle-grid-header">
+                <div><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="width:16px;height:16px;cursor:pointer;"></div>
+                <div></div>
+                <div>Vehicle Details</div>
+                <div>VIN / Chassis</div>
+                <div>Owner</div>
+                <div>Insurance Health</div>
+                <div>Status</div>
+                <div></div>
+            </div>
+            <div id="vehicle-list"><!-- rows rendered by JS --></div>
+        </div>
+    </main>
+
+    <!-- INSPECTOR DRAWER -->
+    <div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+    <div class="drawer" id="inspectorDrawer">
+        <div class="drawer-header">
+            <h2 style="font-family: 'Manrope'; font-size: 1.25rem;">Vehicle Inspector</h2>
+            <button class="btn-secondary" style="padding: 8px;" onclick="closeDrawer()">
+                <i class="ri-close-line"></i>
+            </button>
+        </div>
+        
+        <div class="drawer-content">
+            <!-- Header Info -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                <div style="position:relative;">
+                    <div id="drawerThumb" style="width: 80px; height: 80px; background: #F1F5F9; border-radius: 12px; background-size: cover; background-position: center;"></div>
+                    <button onclick="openPhotoModal()" title="Change photo" style="position:absolute;bottom:-6px;right:-6px;width:26px;height:26px;background:var(--accent-blue);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                        <i class="ri-camera-line" style="color:white;font-size:0.75rem;"></i>
+                    </button>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.5rem; font-family: 'JetBrains Mono'; margin-bottom: 4px;" id="drawerPlate">—</h3>
+                    <div class="status-pill status-active" id="drawerStatus">● —</div>
+                </div>
+            </div>
+
+            <!-- Details -->
+            <div class="drawer-section">
+                <div class="section-label">Specifications</div>
+                <div class="info-grid">
+                    <div class="info-item"><label>Make/Model</label><value id="drawerMake">—</value></div>
+                    <div class="info-item"><label>Type</label><value id="drawerType">—</value></div>
+                    <div class="info-item"><label>Engine No.</label><value id="drawerEngine">—</value></div>
+                    <div class="info-item"><label>Year</label><value id="drawerYear">—</value></div>
+                </div>
+            </div>
+
+            <!-- Insurance -->
+            <div class="drawer-section">
+                <div class="section-label">Compliance &amp; Insurance</div>
+                <div style="background: #F8FAFC; padding: 1rem; border-radius: 8px; border: 1px solid #E2E8F0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                        <span style="font-weight: 600;" id="drawerProvider">—</span>
+                        <span style="font-weight: 600;" id="drawerInsStatus">—</span>
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px;" id="drawerPolicyNum">Policy #—</div>
+                    <div class="ins-bar-bg" style="height: 8px; background: #E2E8F0;">
+                        <div class="ins-bar-fill" id="drawerInsBar" style="width: 0%; background: #10B981;"></div>
+                    </div>
+                    <div style="font-size: 0.8rem; margin-top: 8px; text-align: right;">Expires: <strong id="drawerExpiry">—</strong></div>
+                </div>
+            </div>
+
+            <!-- Documents -->
+            <div class="drawer-section">
+                <div class="section-label">Documents</div>
+                <div class="doc-card">
+                    <i class="ri-file-pdf-fill" style="color: #EF4444; font-size: 1.5rem;"></i>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">Insurance Policy.pdf</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">On File</div>
+                    </div>
+                    <i class="ri-download-line" style="color: var(--text-tertiary);"></i>
+                </div>
+                <div class="doc-card">
+                    <i class="ri-file-text-fill" style="color: #3B82F6; font-size: 1.5rem;"></i>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 500;">Registration Cert.pdf</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Verified</div>
+                    </div>
+                    <i class="ri-download-line" style="color: var(--text-tertiary);"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="drawer-actions">
+            <button class="btn btn-secondary" id="drawerBlockBtn" onclick="toggleBlock()" style="flex: 1; border-color: #EF4444; color: #EF4444;">Block Vehicle</button>
+            <button class="btn btn-primary" id="drawerEditBtn" onclick="openEditModal()" style="flex: 1; background: var(--accent-blue);"><i class="ri-pencil-line"></i> Edit</button>
+            <button class="btn btn-secondary" id="drawerDeleteBtn" onclick="confirmDelete()" style="flex: 1; border-color: #EF4444; color: white; background: #EF4444;"><i class="ri-delete-bin-line"></i> Delete</button>
+            <button class="btn btn-primary" onclick="closeDrawer()" style="flex: 1;">Close</button>
+        </div>
+
+        <!-- Vehicle History Timeline -->
+        <div class="drawer-section" style="border-top: 1px solid #E2E8F0; padding-top: 1rem; margin-top: 0.5rem;">
+            <div class="section-label" style="display:flex;align-items:center;gap:8px;">
+                <i class="ri-history-line"></i> Activity History
+            </div>
+            <div id="drawerHistory" style="max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                <div style="color: var(--text-tertiary); font-size: 0.85rem; text-align: center; padding: 1rem;">Loading…</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal-overlay" id="deleteModal" style="z-index: 210;">
+        <div class="add-modal" id="deleteModalCard" style="width: 420px; text-align: center; padding: 2rem;">
+            <i class="ri-error-warning-line" style="font-size: 3rem; color: var(--accent-red); display: block; margin-bottom: 1rem;"></i>
+            <h3 style="font-family: 'Manrope'; margin-bottom: 0.5rem;">Delete Vehicle?</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;" id="deleteMsg">
+                This will permanently remove <strong id="deletePlate">—</strong> from the fleet.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()" style="flex: 1;">Cancel</button>
+                <button class="btn btn-primary" onclick="executeDelete()" style="flex: 1; background: #EF4444; border-color: #EF4444;"><i class="ri-delete-bin-line"></i> Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT VEHICLE MODAL -->
+    <div class="modal-overlay" id="editModal" style="z-index: 205;">
+        <div class="add-modal" id="editModalCard" style="width: 640px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="font-family: 'Manrope';">Edit Vehicle</h3>
+                <button class="btn-secondary" style="padding: 8px;" onclick="closeEditModal()"><i class="ri-close-line"></i></button>
+            </div>
+            <div class="modal-grid">
+                <div class="modal-field"><label>Plate Number</label><input id="e-plate" disabled style="background:#F1F5F9;cursor:not-allowed;"></div>
+                <div class="modal-field"><label>Make/Brand</label><input id="e-make" placeholder="e.g. Toyota"></div>
+                <div class="modal-field"><label>Vehicle Type</label>
+                    <select id="e-type">
+                        <option value="">Select…</option>
+                        <option>Sedan</option><option>SUV</option><option>Truck</option>
+                        <option>Van</option><option>Bus</option><option>Motorcycle</option>
+                    </select>
+                </div>
+                <div class="modal-field"><label>Year</label><input id="e-year" type="number" min="1990" max="2030"></div>
+                <div class="modal-field"><label>VIN</label><input id="e-vin" placeholder="17-char VIN"></div>
+                <div class="modal-field"><label>Engine No.</label><input id="e-engine" placeholder="Optional"></div>
+                <div class="modal-field"><label>Owner Name</label><input id="e-owner" placeholder="Full name"></div>
+                <div class="modal-field"><label>Insurance Provider</label>
+                    <select id="e-provider">
+                        <option value="">Select…</option>
+                        <option>Sanlam</option><option>Discovery</option><option>Old Mutual</option>
+                        <option>Santam</option><option>MiWay</option><option>Hollard</option>
+                    </select>
+                </div>
+                <div class="modal-field"><label>Policy Number</label><input id="e-policy" placeholder="e.g. POL-000123"></div>
+                <div class="modal-field"><label>Insurance Expiry</label><input id="e-expiry" type="date"></div>
+            </div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 0.5rem;">
+                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitEditVehicle()"><i class="ri-save-line"></i> Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD VEHICLE MODAL -->
+    <div class="modal-overlay" id="addModal" style="z-index:205;">
+        <div class="add-modal" id="addModalCard" style="width:660px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h3 style="font-family:'Manrope';"><i class="ri-add-circle-line" style="color:var(--accent-blue);margin-right:8px;"></i>Add New Vehicle</h3>
+                <button class="btn-secondary" style="padding:8px;" onclick="closeAddModal()"><i class="ri-close-line"></i></button>
+            </div>
+
+            <!-- Photo Preview -->
+            <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.5rem;padding:1rem;background:#F8FAFC;border-radius:12px;border:1px solid #E2E8F0;">
+                <div id="f-photo-preview" style="width:80px;height:80px;border-radius:12px;background:#E2E8F0 url('https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=100') center/cover;flex-shrink:0;"></div>
+                <div style="flex:1;">
+                    <div style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">VEHICLE PHOTO</div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <label for="f-photo-file" style="cursor:pointer;background:white;border:1px solid #E2E8F0;padding:7px 14px;border-radius:8px;font-size:0.82rem;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:6px;transition:border-color 0.2s;" onmouseenter="this.style.borderColor='#3B82F6'" onmouseleave="this.style.borderColor='#E2E8F0'">
+                            <i class="ri-upload-2-line" style="color:#3B82F6;"></i> Upload
+                        </label>
+                        <input type="file" id="f-photo-file" accept="image/*" style="display:none;" onchange="previewAddPhoto(this)">
+                        <span style="color:#CBD5E1;font-size:0.75rem;">or</span>
+                        <input type="url" id="f-photo-url" placeholder="Paste image URL…" style="flex:1;padding:7px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:0.82rem;font-family:'Inter';" oninput="previewAddPhotoUrl(this.value)">
+                    </div>
+                    <div style="font-size:0.75rem;color:#94A3B8;margin-top:6px;">JPG, PNG, WEBP · max 2 MB — or paste any image URL</div>
+                </div>
+            </div>
+
+            <div class="modal-grid">
+                <div class="modal-field"><label>Plate Number *</label><input id="f-plate" placeholder="e.g. TN-45-AB-1234" style="text-transform:uppercase;"></div>
+                <div class="modal-field"><label>Make / Brand *</label><input id="f-make" placeholder="e.g. Toyota"></div>
+                <div class="modal-field"><label>Vehicle Type *</label>
+                    <select id="f-type">
+                        <option value="">Select type…</option>
+                        <option>Sedan</option><option>SUV</option><option>Truck</option>
+                        <option>Van</option><option>Bus</option><option>Motorcycle</option>
+                        <option>Heavy Commercial</option><option>Light Truck</option><option>Medium Commercial</option>
+                    </select>
+                </div>
+                <div class="modal-field"><label>Year *</label><input id="f-year" type="number" min="1990" max="2030" placeholder="2024"></div>
+                <div class="modal-field"><label>VIN / Chassis *</label><input id="f-vin" placeholder="17-char VIN" style="text-transform:uppercase;"></div>
+                <div class="modal-field"><label>Engine No.</label><input id="f-engine" placeholder="Optional"></div>
+                <div class="modal-field"><label>Owner Name *</label><input id="f-owner" placeholder="Full name"></div>
+                <div class="modal-field"><label>Insurance Provider *</label>
+                    <select id="f-provider">
+                        <option value="">Select provider…</option>
+                        <option>HDFC ERGO</option><option>ICICI Lombard</option><option>Allianz</option><option>TATA AIG</option>
+                        <option>Sanlam</option><option>Discovery</option><option>Old Mutual</option>
+                        <option>Santam</option><option>MiWay</option><option>Hollard</option>
+                    </select>
+                </div>
+                <div class="modal-field"><label>Policy Number *</label><input id="f-policy" placeholder="e.g. POL-000123" style="text-transform:uppercase;"></div>
+                <div class="modal-field"><label>Insurance Expiry *</label><input id="f-expiry" type="date"></div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:0.5rem;">
+                <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitAddVehicle()"><i class="ri-add-line"></i> Add Vehicle</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHANGE PHOTO MODAL (drawer) -->
+    <div class="modal-overlay" id="photoModal" style="z-index:220;">
+        <div class="add-modal" id="photoModalCard" style="width:420px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                <h3 style="font-family:'Manrope';"><i class="ri-image-edit-line" style="color:var(--accent-blue);margin-right:8px;"></i>Change Vehicle Photo</h3>
+                <button class="btn-secondary" style="padding:8px;" onclick="closePhotoModal()"><i class="ri-close-line"></i></button>
+            </div>
+            <div style="text-align:center;margin-bottom:1.5rem;">
+                <div id="photo-modal-preview" style="width:140px;height:100px;border-radius:12px;background:#E2E8F0 center/cover;margin:0 auto 1rem;border:2px dashed #CBD5E1;"></div>
+                <div style="font-size:0.8rem;color:var(--text-secondary);" id="photo-modal-plate">—</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);">Upload from device</label>
+                <label for="pm-file" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:2px dashed #CBD5E1;border-radius:10px;cursor:pointer;color:#64748B;font-size:0.9rem;font-weight:500;transition:border-color 0.2s,color 0.2s;" onmouseenter="this.style.borderColor='#3B82F6';this.style.color='#3B82F6'" onmouseleave="this.style.borderColor='#CBD5E1';this.style.color='#64748B'">
+                    <i class="ri-upload-cloud-2-line" style="font-size:1.3rem;"></i> Click to upload image
+                </label>
+                <input type="file" id="pm-file" accept="image/*" style="display:none;" onchange="previewPhotoModal(this)">
+                <label style="font-size:0.8rem;font-weight:600;color:var(--text-secondary);margin-top:4px;">Or paste image URL</label>
+                <input type="url" id="pm-url" placeholder="https://example.com/truck.jpg" style="padding:10px 14px;border:1px solid #E2E8F0;border-radius:8px;font-family:'Inter';font-size:0.9rem;" oninput="previewPhotoUrl(this.value)">
+            </div>
+            <div style="display:flex;gap:12px;margin-top:1.5rem;">
+                <button class="btn btn-secondary" onclick="closePhotoModal()" style="flex:1;">Cancel</button>
+                <button class="btn btn-primary" onclick="savePhoto()" style="flex:1;"><i class="ri-save-line"></i> Save Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BULK ACTION BAR -->
+    <div id="bulkBar" style="
+        position: fixed; bottom: -90px; left: 50%; transform: translateX(-50%);
+        background: var(--bg-sidebar); color: white; padding: 12px 24px;
+        border-radius: 16px; display: flex; align-items: center; gap: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.25); z-index: 100;
+        transition: bottom 0.35s cubic-bezier(0.4,0,0.2,1);
+        font-family: 'Inter'; font-size: 0.9rem;
+    ">
+        <span id="bulkCount">0 selected</span>
+        <button onclick="bulkActivate()" style="background:#10B981;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;"><i class="ri-check-line"></i> Activate</button>
+        <button onclick="bulkBlock()" style="background:#F59E0B;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;"><i class="ri-forbid-line"></i> Block</button>
+        <button onclick="bulkDelete()" style="background:#EF4444;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:0.85rem;"><i class="ri-delete-bin-line"></i> Delete</button>
+        <button onclick="clearSelection()" style="background:transparent;color:#94A3B8;border:1px solid #334155;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:500;font-size:0.85rem;">Cancel</button>
+    </div>
+
+    <script>
+        /* ── State ── */
+        let currentFilter = 'all';
+        let currentSearch = '';
+        let activeVehicleId = null;
+
+        /* ── Render Helpers ── */
+        function insColor(isoDate) {
+            const rc = TruFleet.riskClass(isoDate);
+            return rc === 'crit' ? 'var(--accent-red)' : rc === 'warn' ? 'var(--accent-amber)' : 'var(--accent-green)';
+        }
+
+        function insLabel(isoDate) {
+            const d = TruFleet.daysUntilExpiry(isoDate);
+            if (d < 0) return '<span style="color:var(--accent-red);font-weight:700;">Expired</span>';
+            if (d === 0) return '<span style="color:var(--accent-red);font-weight:700;">Expires today</span>';
+            if (d <= 7) return '<span style="color:var(--accent-amber);font-weight:600;">' + d + ' Days Left</span>';
+            return '<span style="color:var(--text-secondary);">' + d + ' Days Remaining</span>';
+        }
+
+        function renderRow(v) {
+            const exp = v.insurance_expiry || v.insuranceExpiry;
+            const pct = TruFleet.insuranceHealthPct(exp);
+            const barColor = insColor(exp);
+            const isBlocked = v.status === 'Blocked';
+            const ownerColor = v.owner_color || v.ownerColor || '#3B82F6';
+            const ownerInitials = v.owner_initials || v.ownerInitials || (v.owner||'').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+            const photo = v.photo || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=100';
+            const plate = v.id || v.plate;
+            return `
+                <div class="vehicle-row" data-plate="${plate}">
+                    <div onclick="event.stopPropagation()"><input type="checkbox" class="row-check" data-id="${plate}" onchange="updateBulkBar()" style="width:16px;height:16px;cursor:pointer;"></div>
+                    <div onclick="openDrawer('${plate}')"><div class="v-thumb" style="background-image: url('${photo}');"></div></div>
+                    <div onclick="openDrawer('${plate}')">
+                        <div class="v-plate">${plate}</div>
+                        <div class="v-type">${v.make} &bull; ${v.type}</div>
+                    </div>
+                    <div onclick="openDrawer('${plate}')" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:var(--text-secondary);">${v.vin}</div>
+                    <div onclick="openDrawer('${plate}')" class="v-owner">
+                        <div class="owner-avatar" style="background:${ownerColor}">${ownerInitials}</div>
+                        ${v.owner}
+                    </div>
+                    <div onclick="openDrawer('${plate}')" class="insurance-cell">
+                        <div class="ins-bar-bg">
+                            <div class="ins-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+                        </div>
+                        <div class="ins-text">${insLabel(exp)}</div>
+                    </div>
+                    <div onclick="openDrawer('${plate}')"><span class="status-pill ${isBlocked ? 'status-blocked' : 'status-active'}">&bull; ${v.status}</span></div>
+                    <div><button class="action-btn" onclick="event.stopPropagation();openDrawer('${plate}')"><i class="ri-more-2-fill"></i></button></div>
+                </div>`;
+        }
+
+        async function getFilteredVehicles() {
+            let vehicles = [];
+            try { vehicles = await TruFleet.getVehicles(); } catch (e) { console.warn('Vehicle fetch failed', e); }
+            if (currentFilter === 'active')   vehicles = vehicles.filter(v => v.status === 'Active');
+            if (currentFilter === 'blocked')  vehicles = vehicles.filter(v => v.status === 'Blocked');
+            if (currentFilter === 'expiring') vehicles = vehicles.filter(v => {
+                const d = TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry);
+                return d >= 0 && d <= 7;
+            });
+            if (currentSearch) {
+                const q = currentSearch.toLowerCase();
+                vehicles = vehicles.filter(v =>
+                    (v.id||'').toLowerCase().includes(q) ||
+                    (v.owner||'').toLowerCase().includes(q) ||
+                    (v.make||'').toLowerCase().includes(q) ||
+                    (v.vin||'').toLowerCase().includes(q)
+                );
+            }
+            return vehicles;
+        }
+
+        async function renderList() {
+            const list = document.getElementById('vehicle-list');
+            list.innerHTML = '<div class="empty-state"><i class="ri-loader-4-line"></i><p>Loading fleet…</p></div>';
+            const vehicles = await getFilteredVehicles();
+            if (vehicles.length === 0) {
+                list.innerHTML = '<div class="empty-state"><i class="ri-truck-line"></i><p>No vehicles match your filter.</p></div>';
+                return;
+            }
+            list.innerHTML = vehicles.map(renderRow).join('');
+            gsap.from('#vehicle-list .vehicle-row', {
+                y: 16, duration: 0.4, stagger: 0.04, ease: 'power2.out'
+            });
+        }
+
+        // Initial render
+        (async () => await renderList())();
+
+        /* ── Filter tabs ── */
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', async () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                const map = { 'All Vehicles': 'all', 'Active': 'active', 'Blocked': 'blocked', 'Expiring Soon': 'expiring' };
+                currentFilter = map[tab.textContent.trim()] || 'all';
+                await renderList();
+            });
+        });
+
+        /* ── Search ── */
+        document.querySelector('.search-input input').addEventListener('input', async function () {
+            currentSearch = this.value.trim();
+            await renderList();
+        });
+
+        /* ── Export CSV ── */
+        document.querySelector('.btn-secondary').addEventListener('click', exportCSV);
+        async function exportCSV() {
+            const vehicles = await getFilteredVehicles();
+            const headers = ['Plate,Make,Type,Year,VIN,Engine,Owner,Status,Insurance Provider,Policy Number,Expiry Date'];
+            const rows = vehicles.map(v =>
+                [v.id||v.plate, v.make, v.type, v.year, v.vin,
+                 v.engine_no||v.engineNo, v.owner, v.status,
+                 v.insurance_provider||v.insuranceProvider,
+                 v.policy_number||v.policyNumber,
+                 v.insurance_expiry||v.insuranceExpiry].join(',')
+            );
+            const blob = new Blob([headers.concat(rows).join('\n')], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'trufleet-fleet-' + new Date().toISOString().slice(0, 10) + '.csv';
+            a.click();
+        }
+
+        /* ── Add Vehicle ── */
+        document.querySelector('.btn-primary').addEventListener('click', openAddModal);
+        const addModal = document.getElementById('addModal');
+        const addModalCard = document.getElementById('addModalCard');
+
+        function openAddModal() {
+            addModal.style.display = 'flex';
+            gsap.fromTo(addModalCard,
+                { scale: 0.94, opacity: 0, y: 24 },
+                { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.2)' }
+            );
+        }
+
+        function closeAddModal() {
+            gsap.to(addModalCard, { scale: 0.94, opacity: 0, y: 12, duration: 0.2, onComplete: () => {
+                addModal.style.display = 'none';
+            }});
+        }
+
+        addModal.addEventListener('click', e => { if (e.target === addModal) closeAddModal(); });
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeAddModal(); closeDrawer(); closeEditModal(); closeDeleteModal(); closePhotoModal(); } });
+
+        /* ── Photo helpers ── */
+        const DEFAULT_PHOTO = 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=200';
+        let pendingAddPhoto = DEFAULT_PHOTO;   // used while filling the add form
+        let pendingPhotoData = null;           // used in the change-photo modal
+
+        function previewAddPhoto(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { alert('Image too large — max 2 MB'); input.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                pendingAddPhoto = e.target.result;
+                document.getElementById('f-photo-preview').style.backgroundImage = `url('${pendingAddPhoto}')`;
+                document.getElementById('f-photo-url').value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function previewAddPhotoUrl(url) {
+            if (!url) { document.getElementById('f-photo-preview').style.backgroundImage = `url('${DEFAULT_PHOTO}')`; pendingAddPhoto = DEFAULT_PHOTO; return; }
+            pendingAddPhoto = url;
+            document.getElementById('f-photo-preview').style.backgroundImage = `url('${url}')`;
+        }
+
+        async function submitAddVehicle() {
+            const plate   = document.getElementById('f-plate').value.trim().toUpperCase();
+            const make    = document.getElementById('f-make').value.trim();
+            const type    = document.getElementById('f-type').value;
+            const year    = document.getElementById('f-year').value.trim();
+            const vin     = document.getElementById('f-vin').value.trim().toUpperCase();
+            const engine  = document.getElementById('f-engine').value.trim() || 'N/A';
+            const owner   = document.getElementById('f-owner').value.trim();
+            const provider= document.getElementById('f-provider').value;
+            const policy  = document.getElementById('f-policy').value.trim().toUpperCase();
+            const expiry  = document.getElementById('f-expiry').value;
+
+            const required = [
+                [plate, 'f-plate'], [make, 'f-make'], [type, 'f-type'],
+                [year, 'f-year'], [vin, 'f-vin'], [owner, 'f-owner'],
+                [provider, 'f-provider'], [policy, 'f-policy'], [expiry, 'f-expiry']
+            ];
+            let valid = true;
+            required.forEach(([val, id]) => {
+                const el = document.getElementById(id);
+                if (!val) { el.classList.add('error'); valid = false; }
+                else el.classList.remove('error');
+            });
+            if (!valid) return;
+
+            const initials = owner.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            const colors = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#F97316','#0EA5E9','#EC4899'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+
+            try {
+                await TruFleet.addVehicle({
+                    id: plate, make, type, vin, engine_no: engine, year: parseInt(year),
+                    owner, owner_initials: initials, owner_color: color,
+                    status: 'Active',
+                    photo: pendingAddPhoto || DEFAULT_PHOTO,
+                    insurance_provider: provider,
+                    policy_number: policy,
+                    insurance_expiry: expiry,
+                });
+                closeAddModal();
+                await renderList();
+                pendingAddPhoto = DEFAULT_PHOTO;
+                ['f-plate','f-make','f-type','f-year','f-vin','f-engine','f-owner','f-provider','f-policy','f-expiry']
+                    .forEach(id => { const el = document.getElementById(id); el.value = ''; el.classList.remove('error'); });
+                document.getElementById('f-photo-preview').style.backgroundImage = `url('${DEFAULT_PHOTO}')`;
+                document.getElementById('f-photo-url').value = '';
+                document.getElementById('f-photo-file').value = '';
+            } catch (err) {
+                alert('Failed to add vehicle: ' + err.message);
+            }
+        }
+
+        /* ── Change Photo modal (drawer) ── */
+        const photoModal = document.getElementById('photoModal');
+        const photoModalCard = document.getElementById('photoModalCard');
+
+        function openPhotoModal() {
+            if (!activeVehicleId) return;
+            pendingPhotoData = null;
+            document.getElementById('pm-file').value = '';
+            document.getElementById('pm-url').value = '';
+            document.getElementById('photo-modal-plate').textContent = activeVehicleId;
+            const current = document.getElementById('drawerThumb').style.backgroundImage;
+            document.getElementById('photo-modal-preview').style.backgroundImage = current || `url('${DEFAULT_PHOTO}')`;
+            photoModal.style.display = 'flex';
+            gsap.fromTo(photoModalCard, { scale: 0.94, opacity: 0, y: 20 }, { scale: 1, opacity: 1, y: 0, duration: 0.35, ease: 'back.out(1.2)' });
+        }
+
+        function closePhotoModal() {
+            gsap.to(photoModalCard, { scale: 0.94, opacity: 0, duration: 0.2, onComplete: () => { photoModal.style.display = 'none'; } });
+        }
+
+        photoModal.addEventListener('click', e => { if (e.target === photoModal) closePhotoModal(); });
+
+        function previewPhotoModal(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 2 * 1024 * 1024) { alert('Image too large — max 2 MB'); input.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                pendingPhotoData = e.target.result;
+                document.getElementById('photo-modal-preview').style.backgroundImage = `url('${pendingPhotoData}')`;
+                document.getElementById('pm-url').value = '';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function previewPhotoUrl(url) {
+            if (!url) return;
+            pendingPhotoData = url;
+            document.getElementById('photo-modal-preview').style.backgroundImage = `url('${url}')`;
+        }
+
+        async function savePhoto() {
+            if (!activeVehicleId || !pendingPhotoData) { alert('Please select or paste a photo first.'); return; }
+            try {
+                await TruFleet.updateVehicle(activeVehicleId, { photo: pendingPhotoData });
+                await TruFleet.addLog({
+                    type: 'ADMIN', entity_id: activeVehicleId,
+                    description: 'Vehicle photo updated', status: 'SUCCESS',
+                });
+                closePhotoModal();
+                await renderList();
+                // refresh drawer thumb
+                document.getElementById('drawerThumb').style.backgroundImage = `url('${pendingPhotoData}')`;
+                pendingPhotoData = null;
+            } catch (err) {
+                alert('Failed to save photo: ' + err.message);
+            }
+        }
+
+        /* ── Drawer ── */
+        const drawer = document.getElementById('inspectorDrawer');
+        const overlay = document.getElementById('drawerOverlay');
+
+        async function openDrawer(vehicleId) {
+            activeVehicleId = vehicleId;
+            let v;
+            try { v = await TruFleet.getVehicleById(vehicleId); } catch (e) { console.warn(e); return; }
+            if (!v) return;
+
+            const exp = v.insurance_expiry || v.insuranceExpiry;
+            const photo = v.photo || 'https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&q=80&w=100';
+
+            document.getElementById('drawerPlate').textContent = v.id || vehicleId;
+            document.getElementById('drawerThumb').style.backgroundImage = `url('${photo}')`;
+
+            const isBlocked = v.status === 'Blocked';
+            const ds = document.getElementById('drawerStatus');
+            ds.textContent = '\u25cf ' + (isBlocked ? 'Blocked' : 'Dispatch Authorized');
+            ds.className = 'status-pill ' + (isBlocked ? 'status-blocked' : 'status-active');
+
+            document.getElementById('drawerMake').textContent = v.make || '—';
+            document.getElementById('drawerType').textContent = v.type || '—';
+            document.getElementById('drawerEngine').textContent = v.engine_no || v.engineNo || 'N/A';
+            document.getElementById('drawerYear').textContent = v.year || '—';
+            document.getElementById('drawerProvider').textContent = v.insurance_provider || v.insuranceProvider || '—';
+            document.getElementById('drawerPolicyNum').textContent = 'Policy #' + (v.policy_number || v.policyNumber || '—');
+
+            const rc = TruFleet.riskClass(exp);
+            const colorMap = { safe: '#10B981', warn: '#F59E0B', crit: '#EF4444' };
+            const labelMap = { safe: 'Valid', warn: 'Expiring Soon', crit: 'Expired' };
+            document.getElementById('drawerInsStatus').textContent = labelMap[rc];
+            document.getElementById('drawerInsStatus').style.color = colorMap[rc];
+            document.getElementById('drawerInsBar').style.width = TruFleet.insuranceHealthPct(exp) + '%';
+            document.getElementById('drawerInsBar').style.background = colorMap[rc];
+            document.getElementById('drawerExpiry').textContent = TruFleet.fmtDate(exp);
+
+            const blockBtn = document.getElementById('drawerBlockBtn');
+            if (isBlocked) {
+                blockBtn.textContent = 'Unblock Vehicle';
+                blockBtn.style.borderColor = '#10B981';
+                blockBtn.style.color = '#10B981';
+            } else {
+                blockBtn.textContent = 'Block Vehicle';
+                blockBtn.style.borderColor = '#EF4444';
+                blockBtn.style.color = '#EF4444';
+            }
+
+            overlay.style.display = 'block';
+            overlay.style.pointerEvents = 'auto';
+            overlay.style.opacity = '1';
+            gsap.to(drawer, { x: 0, duration: 0.4, ease: 'power3.out' });
+            loadHistory(vehicleId);
+        }
+
+        function closeDrawer() {
+            overlay.style.pointerEvents = 'none';
+            overlay.style.opacity = '0';
+            gsap.to(drawer, { x: '100%', duration: 0.3, ease: 'power3.in', onComplete: () => {
+                overlay.style.display = 'none';
+            }});
+            activeVehicleId = null;
+        }
+
+        async function toggleBlock() {
+            if (!activeVehicleId) return;
+            let v;
+            try { v = await TruFleet.getVehicleById(activeVehicleId); } catch (e) { return; }
+            if (!v) return;
+            const newStatus = v.status === 'Blocked' ? 'Active' : 'Blocked';
+            try {
+                await TruFleet.updateVehicle(activeVehicleId, { status: newStatus });
+                await TruFleet.addLog({
+                    type: 'ADMIN',
+                    timestamp: new Date().toISOString(),
+                    entity_id: activeVehicleId,
+                    description: newStatus === 'Blocked' ? 'Vehicle Blocked by Admin' : 'Vehicle Unblocked by Admin',
+                    status: 'SUCCESS',
+                    detail: 'Status changed to ' + newStatus,
+                });
+                await renderList();
+                await openDrawer(activeVehicleId);
+            } catch (err) {
+                alert('Failed to update status: ' + err.message);
+            }
+        }
+
+        /* ── Delete Vehicle ── */
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteModalCard = document.getElementById('deleteModalCard');
+
+        function confirmDelete() {
+            if (!activeVehicleId) return;
+            document.getElementById('deletePlate').textContent = activeVehicleId;
+            deleteModal.style.display = 'flex';
+            gsap.fromTo(deleteModalCard, { scale: 0.94, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(1.2)' });
+        }
+
+        function closeDeleteModal() {
+            gsap.to(deleteModalCard, { scale: 0.94, opacity: 0, duration: 0.2, onComplete: () => { deleteModal.style.display = 'none'; }});
+        }
+
+        async function executeDelete() {
+            if (!activeVehicleId) return;
+            try {
+                await TruFleet.deleteVehicle(activeVehicleId);
+                closeDeleteModal();
+                closeDrawer();
+                await renderList();
+            } catch (err) {
+                alert('Failed to delete vehicle: ' + err.message);
+            }
+        }
+
+        deleteModal.addEventListener('click', e => { if (e.target === deleteModal) closeDeleteModal(); });
+
+        /* ── Edit Vehicle Modal ── */
+        const editModal = document.getElementById('editModal');
+        const editModalCard = document.getElementById('editModalCard');
+
+        async function openEditModal() {
+            if (!activeVehicleId) return;
+            let v;
+            try { v = await TruFleet.getVehicleById(activeVehicleId); } catch (e) { return; }
+            if (!v) return;
+
+            document.getElementById('e-plate').value = v.id || activeVehicleId;
+            document.getElementById('e-make').value = v.make || '';
+            document.getElementById('e-type').value = v.type || '';
+            document.getElementById('e-year').value = v.year || '';
+            document.getElementById('e-vin').value = v.vin || '';
+            document.getElementById('e-engine').value = v.engine_no || v.engineNo || '';
+            document.getElementById('e-owner').value = v.owner || '';
+            document.getElementById('e-provider').value = v.insurance_provider || v.insuranceProvider || '';
+            document.getElementById('e-policy').value = v.policy_number || v.policyNumber || '';
+            document.getElementById('e-expiry').value = (v.insurance_expiry || v.insuranceExpiry || '').slice(0, 10);
+
+            editModal.style.display = 'flex';
+            gsap.fromTo(editModalCard, { scale: 0.94, opacity: 0, y: 24 }, { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.2)' });
+        }
+
+        function closeEditModal() {
+            gsap.to(editModalCard, { scale: 0.94, opacity: 0, y: 12, duration: 0.2, onComplete: () => { editModal.style.display = 'none'; }});
+        }
+
+        editModal.addEventListener('click', e => { if (e.target === editModal) closeEditModal(); });
+
+        async function submitEditVehicle() {
+            const patchData = {};
+            const make     = document.getElementById('e-make').value.trim();
+            const type     = document.getElementById('e-type').value;
+            const year     = document.getElementById('e-year').value.trim();
+            const vin      = document.getElementById('e-vin').value.trim().toUpperCase();
+            const engine   = document.getElementById('e-engine').value.trim();
+            const owner    = document.getElementById('e-owner').value.trim();
+            const provider = document.getElementById('e-provider').value;
+            const policy   = document.getElementById('e-policy').value.trim().toUpperCase();
+            const expiry   = document.getElementById('e-expiry').value;
+
+            if (make)     patchData.make = make;
+            if (type)     patchData.type = type;
+            if (year)     patchData.year = parseInt(year);
+            if (vin)      patchData.vin = vin;
+            if (engine)   patchData.engine_no = engine;
+            if (owner) {
+                patchData.owner = owner;
+                patchData.owner_initials = owner.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            }
+            if (provider) patchData.insurance_provider = provider;
+            if (policy)   patchData.policy_number = policy;
+            if (expiry)   patchData.insurance_expiry = expiry;
+
+            if (Object.keys(patchData).length === 0) {
+                alert('No changes detected.');
+                return;
+            }
+
+            try {
+                await TruFleet.updateVehicle(activeVehicleId, patchData);
+                await TruFleet.addLog({
+                    type: 'ADMIN',
+                    entity_id: activeVehicleId,
+                    description: 'Vehicle details updated',
+                    status: 'SUCCESS',
+                    detail: 'Changed: ' + Object.keys(patchData).join(', '),
+                    json_data: patchData,
+                });
+                closeEditModal();
+                await renderList();
+                await openDrawer(activeVehicleId);
+            } catch (err) {
+                alert('Failed to update vehicle: ' + err.message);
+            }
+        }
+
+        /* ── Vehicle History (in Drawer) ── */
+        async function loadHistory(vehicleId) {
+            const container = document.getElementById('drawerHistory');
+            container.innerHTML = '<div style="color:var(--text-tertiary);font-size:0.85rem;text-align:center;padding:1rem;">Loading…</div>';
+            try {
+                const logs = await TruFleet.getVehicleHistory(vehicleId);
+                if (!logs || logs.length === 0) {
+                    container.innerHTML = '<div style="color:var(--text-tertiary);font-size:0.85rem;text-align:center;padding:1rem;">No activity yet</div>';
+                    return;
+                }
+                container.innerHTML = logs.map(log => {
+                    const icon = log.type === 'ADMIN' ? 'ri-shield-user-line' : log.type === 'AUTH' ? 'ri-login-box-line' : 'ri-settings-3-line';
+                    const color = log.status === 'SUCCESS' ? '#10B981' : log.status === 'FAILED' ? '#EF4444' : '#3B82F6';
+                    return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #F1F5F9;">
+                        <i class="${icon}" style="color:${color};font-size:1.1rem;margin-top:2px;"></i>
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-size:0.85rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${log.description || '—'}</div>
+                            <div style="font-size:0.75rem;color:var(--text-tertiary);">${TruFleet.fmtDate(log.timestamp)} ${TruFleet.fmtTime(log.timestamp)}</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                container.innerHTML = '<div style="color:var(--text-tertiary);font-size:0.85rem;text-align:center;padding:1rem;">Could not load history</div>';
+            }
+        }
+
+        /* ── Bulk Selection ── */
+        let selectedIds = new Set();
+
+        function updateBulkBar() {
+            selectedIds.clear();
+            document.querySelectorAll('.row-check:checked').forEach(cb => selectedIds.add(cb.dataset.id));
+            const bar = document.getElementById('bulkBar');
+            document.getElementById('bulkCount').textContent = selectedIds.size + ' selected';
+            bar.style.bottom = selectedIds.size > 0 ? '24px' : '-90px';
+        }
+
+        function toggleSelectAll(masterCb) {
+            document.querySelectorAll('.row-check').forEach(cb => { cb.checked = masterCb.checked; });
+            updateBulkBar();
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.row-check').forEach(cb => { cb.checked = false; });
+            document.getElementById('selectAll').checked = false;
+            updateBulkBar();
+        }
+
+        async function bulkActivate() {
+            if (selectedIds.size === 0) return;
+            try {
+                await TruFleet.bulkUpdateStatus([...selectedIds], 'Active');
+                clearSelection();
+                await renderList();
+            } catch (err) { alert('Bulk activate failed: ' + err.message); }
+        }
+
+        async function bulkBlock() {
+            if (selectedIds.size === 0) return;
+            try {
+                await TruFleet.bulkUpdateStatus([...selectedIds], 'Blocked');
+                clearSelection();
+                await renderList();
+            } catch (err) { alert('Bulk block failed: ' + err.message); }
+        }
+
+        async function bulkDelete() {
+            if (selectedIds.size === 0) return;
+            if (!confirm(`Delete ${selectedIds.size} vehicle(s)? This cannot be undone.`)) return;
+            try {
+                await TruFleet.bulkDeleteVehicles([...selectedIds]);
+                clearSelection();
+                await renderList();
+            } catch (err) { alert('Bulk delete failed: ' + err.message); }
+        }
+    </script>
+
+
+</body>
+</html>

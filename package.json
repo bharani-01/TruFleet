@@ -1,0 +1,20 @@
+{
+  "name": "trufleet",
+  "version": "1.0.0",
+  "description": "TruFleet — Enterprise Fleet Intelligence Platform",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "nodemon server/index.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.7",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.4",
+    "express": "^4.18.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

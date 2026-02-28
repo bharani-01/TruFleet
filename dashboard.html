@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Command Center</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- TruFleet API Client -->
+    <script src="trufleet-api.js"></script>
+    <script src="trufleet-notif.js"></script>
+    <script src="auth-check.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            /* Premium Light Theme Palette */
+            --bg-body: #F1F5F9;
+            --bg-surface: #FFFFFF;
+            --bg-sidebar: #0F172A; /* Deep Navy for contrast */
+            
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-on-dark: #F8FAFC;
+
+            --accent-primary: #0F172A;
+            --accent-blue: #3B82F6;
+            --accent-success: #10B981;
+            --accent-warning: #F59E0B;
+            --accent-danger: #EF4444;
+
+            /* Dimensions */
+            --sidebar-width-collapsed: 72px;
+            --sidebar-width-expanded: 260px;
+            --header-height: 70px;
+
+            /* Effects */
+            --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            --shadow-float: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+            --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* 
+         * SIDEBAR - The Hover Interaction 
+         */
+        .sidebar {
+            width: var(--sidebar-width-collapsed);
+            background: var(--bg-sidebar);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 50;
+            padding: 1.5rem 0;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.4s var(--transition-smooth);
+            overflow: hidden;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.05);
+        }
+
+        .sidebar:hover {
+            width: var(--sidebar-width-expanded);
+        }
+
+        .brand-icon {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            margin-bottom: 3rem;
+            color: white;
+            white-space: nowrap;
+        }
+
+        .brand-icon i {
+            font-size: 1.75rem;
+            min-width: 32px;
+            color: var(--accent-blue);
+        }
+
+        .brand-text {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-left: 16px;
+            opacity: 0;
+            transform: translateX(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar:hover .brand-text {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding: 0 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            height: 48px;
+            padding: 0 14px;
+            border-radius: 8px;
+            color: #94A3B8;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-item i {
+            font-size: 1.4rem;
+            min-width: 24px;
+        }
+
+        .nav-label {
+            margin-left: 16px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            transition-delay: 0.1s;
+        }
+
+        .sidebar:hover .nav-label {
+            opacity: 1;
+        }
+
+        /* 
+         * MAIN CONTENT AREA 
+         */
+        .main-wrapper {
+            flex: 1;
+            margin-left: var(--sidebar-width-collapsed); /* Space for collapsed sidebar */
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow-y: auto;
+            transition: margin-left 0.4s var(--transition-smooth);
+        }
+
+        /* To push content when sidebar expands - optional, but keeps layout cleaner if we don't push */
+        /* .sidebar:hover ~ .main-wrapper { margin-left: var(--sidebar-width-expanded); } */
+
+        /* Header */
+        header {
+            height: var(--header-height);
+            background: var(--bg-surface);
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 40;
+        }
+
+        .header-title h1 {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+        .header-title span {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .search-bar {
+            background: #F1F5F9;
+            border-radius: 8px;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 300px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .search-bar:focus-within {
+            background: white;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-content {
+            padding: 2rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid #E2E8F0;
+            transition: transform 0.2s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-float);
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .kpi-value {
+            font-family: 'Manrope', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .trend-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 100px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .trend-up { background: #DCFCE7; color: #166534; }
+        .trend-down { background: #FEE2E2; color: #991B1B; }
+
+        /* Middle Section: Charts & Map */
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: var(--bg-surface);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid #E2E8F0;
+            height: 400px;
+            position: relative;
+        }
+
+        .section-title {
+            font-family: 'Manrope', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Bottom Section: Audit Log / Live Feed */
+        .table-container {
+            background: var(--bg-surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow-card);
+            border: 1px solid #E2E8F0;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            padding: 1rem 1.5rem;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            background: #F8FAFC;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #F1F5F9;
+            font-size: 0.9rem;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: #F8FAFC; }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-success { background: #DCFCE7; color: #166534; }
+        .status-error { background: #FEE2E2; color: #991B1B; }
+        .status-warning { background: #FEF3C7; color: #92400E; }
+
+        .id-cell { font-family: 'JetBrains Mono', monospace; color: var(--text-primary); }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .analytics-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Left Toggle Sidebar -->
+    <nav class="sidebar">
+        <div class="brand-icon">
+            <i class="ri-truck-fill"></i>
+            <span class="brand-text">TRUFLEET</span>
+        </div>
+
+        <div class="nav-menu">
+            <a href="dashboard.html" class="nav-item active">
+                <i class="ri-dashboard-3-line"></i>
+                <span class="nav-label">Overview</span>
+            </a>
+            <a href="vehicle_management.html" class="nav-item">
+                <i class="ri-bus-line"></i>
+                <span class="nav-label">Vehicle Management</span>
+            </a>
+            <a href="insurance_monitor.html" class="nav-item">
+                <i class="ri-shield-check-line"></i>
+                <span class="nav-label">Insurance Monitor</span>
+            </a>
+            <a href="audits.html" class="nav-item">
+                <i class="ri-file-list-3-line"></i>
+                <span class="nav-label">Audit Logs</span>
+            </a>
+            <div style="flex: 1"></div>
+            <a href="#" class="nav-item" id="notifBell" onclick="event.preventDefault();toggleNotifPanel()" style="position:relative;">
+                <i class="ri-notification-3-line"></i>
+                <span class="nav-label">Notifications</span>
+                <span id="notifBadge" style="position:absolute;top:6px;left:38px;background:#EF4444;color:white;font-size:0.65rem;font-weight:700;min-width:18px;height:18px;display:none;align-items:center;justify-content:center;border-radius:9px;padding:0 5px;">0</span>
+            </a>
+            <a href="setting.html" class="nav-item">
+                <i class="ri-settings-4-line"></i>
+                <span class="nav-label">Settings</span>
+            </a>
+            <a href="account.html" class="nav-item">
+                <i class="ri-user-line"></i>
+                <span class="nav-label">Account</span>
+            </a>
+            <a href="#" class="nav-item" onclick="event.preventDefault();logout()" style="color: #EF4444;">
+                <i class="ri-logout-box-r-line"></i>
+                <span class="nav-label">Logout</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- NOTIFICATION PANEL -->
+    <div id="notifPanel" style="position:fixed;top:0;right:-400px;width:380px;height:100vh;background:white;box-shadow:-10px 0 40px rgba(0,0,0,0.08);z-index:300;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;font-family:'Inter',sans-serif;">
+        <div style="padding:1.5rem;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-family:'Manrope';font-size:1.1rem;">Notifications</h3>
+            <div style="display:flex;gap:8px;">
+                <button onclick="markAllRead()" style="font-size:0.8rem;color:#3B82F6;background:none;border:none;cursor:pointer;font-weight:600;">Mark all read</button>
+                <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94A3B8;"><i class="ri-close-line"></i></button>
+            </div>
+        </div>
+        <div id="notifList" style="flex:1;overflow-y:auto;padding:0.5rem;"></div>
+    </div>
+    <div id="notifOverlay" onclick="toggleNotifPanel()" style="position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:299;display:none;"></div>
+
+    <!-- Main Content -->
+    <main class="main-wrapper">
+        <header>
+            <div class="header-title">
+                <h1>Overview</h1>
+                <span id="header-username">Welcome back, Chief Officer</span>
+            </div>
+            
+            <div class="header-actions">
+                <div class="search-bar">
+                    <i class="ri-search-line" style="color: #94A3B8;"></i>
+                    <input type="text" placeholder="Search vehicle, policy, or ID...">
+                </div>
+                
+                <button style="position: relative; background: none; border: none; cursor: pointer;">
+                    <i class="ri-notification-3-line" style="font-size: 1.25rem;"></i>
+                    <span style="position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: var(--accent-danger); border-radius: 50%;"></span>
+                </button>
+                
+                <div class="user-profile">
+                    <div class="avatar">CO</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-content">
+            
+            <!-- KPI Row -->
+            <div class="kpi-grid">
+                <!-- Total Vehicles -->
+                <div class="kpi-card gs-fade">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Total Fleet</span>
+                        <div class="kpi-icon" style="background: #E0F2FE; color: #0284C7;">
+                            <i class="ri-truck-line"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-total">—</div>
+                    <div class="trend-badge trend-up" id="kpi-total-trend">
+                        <i class="ri-arrow-up-line"></i> Fleet size
+                    </div>
+                </div>
+
+                <!-- Active -->
+                <div class="kpi-card gs-fade">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Active / On Road</span>
+                        <div class="kpi-icon" style="background: #DCFCE7; color: #166534;">
+                            <i class="ri-checkbox-circle-line"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-active">—</div>
+                    <div class="trend-badge trend-up" id="kpi-active-trend">
+                        <i class="ri-arrow-up-line"></i> utilization
+                    </div>
+                </div>
+
+                <!-- Expiring Insurance -->
+                <div class="kpi-card gs-fade">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Insurance Risk</span>
+                        <div class="kpi-icon" style="background: #FEF3C7; color: #D97706;">
+                            <i class="ri-alert-line"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-risk">—</div>
+                    <span class="kpi-label" id="kpi-risk-label" style="color: #D97706;">Expiring in &lt; 7 days</span>
+                </div>
+
+                <!-- Blocked -->
+                <div class="kpi-card gs-fade">
+                    <div class="kpi-header">
+                        <span class="kpi-label">Blocked Vehicles</span>
+                        <div class="kpi-icon" style="background: #FEE2E2; color: #DC2626;">
+                            <i class="ri-forbid-line"></i>
+                        </div>
+                    </div>
+                    <div class="kpi-value" id="kpi-blocked">—</div>
+                    <span class="kpi-label" id="kpi-blocked-label" style="color: #DC2626;">Compliance violation</span>
+                </div>
+            </div>
+
+            <!-- Analytics Row -->
+            <div class="analytics-grid">
+                <div class="chart-container gs-fade">
+                    <div class="section-title">
+                        Dispatch Authorization Volume
+                        <select id="dispatch-timeframe" style="border: 1px solid #E2E8F0; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; cursor: pointer;">
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                        </select>
+                    </div>
+                    <canvas id="dispatchChart"></canvas>
+                </div>
+
+                <div class="chart-container gs-fade">
+                    <div class="section-title">Compliance Health</div>
+                    <div style="height: 250px; display: flex; justify-content: center; align-items: center;">
+                        <canvas id="complianceChart"></canvas>
+                    </div>
+                    <div id="compliance-text" style="margin-top: 1rem; text-align: center; font-size: 0.9rem; color: var(--text-secondary);">
+                        95% of fleet is fully compliant
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Audit Logs -->
+            <div class="table-container gs-fade">
+                <div class="table-header">
+                    <div class="section-title" style="margin-bottom: 0;">Live Operational Feed</div>
+                    <a href="audits.html" style="color: var(--accent-blue); font-weight: 600; font-size: 0.9rem; text-decoration: none;">View All Logs →</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Vehicle ID</th>
+                            <th>Action</th>
+                            <th>Status</th>
+                            <th>Reason/Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="live-feed-tbody">
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        /* ── Boot ── */
+        (async function init() {
+
+        /* ── User ── */
+        const user = TruFleet.getCurrentUser();
+        const headerEl = document.getElementById('header-username');
+        if (headerEl) headerEl.textContent = 'Welcome back, ' + user.name;
+        const av = document.querySelector('.avatar');
+        if (av) av.textContent = user.initials || 'CO';
+
+        /* ── KPIs from API ── */
+        let kpis = {};
+        try {
+            kpis = await TruFleet.getKPIs();
+        } catch (e) {
+            console.warn('KPI fetch failed, using empty state', e);
+        }
+        document.getElementById('kpi-total').textContent   = (kpis.total   || 0).toLocaleString();
+        document.getElementById('kpi-active').textContent  = (kpis.active  || 0).toLocaleString();
+        document.getElementById('kpi-risk').textContent    = (kpis.expiring || 0);
+        document.getElementById('kpi-blocked').textContent = (kpis.blocked || 0);
+
+        const utilPct = kpis.utilPct || 0;
+        const riskCount = kpis.expiring || 0;
+        const blocked   = kpis.blocked  || 0;
+        document.getElementById('kpi-active-trend').innerHTML =
+            '<i class="ri-arrow-up-line"></i> ' + utilPct + '% utilization';
+        document.getElementById('kpi-risk-label').textContent =
+            riskCount === 1 ? '1 vehicle expiring soon' : riskCount + ' vehicles expiring in ≤ 7 days';
+        document.getElementById('kpi-blocked-label').textContent =
+            blocked + (blocked === 1 ? ' vehicle blocked' : ' vehicles blocked');
+
+        /* ── Live feed table ── */
+        const statusMap = {
+            AUTHORIZED: '<span class="status-pill status-success"><i class="ri-check-line"></i> AUTHORIZED</span>',
+            DENIED: '<span class="status-pill status-error"><i class="ri-close-line"></i> DENIED</span>',
+            WARNING: '<span class="status-pill status-warning"><i class="ri-error-warning-line"></i> WARNING</span>',
+            SUCCESS: '<span class="status-pill status-success"><i class="ri-check-line"></i> SUCCESS</span>',
+            COMPLETE: '<span class="status-pill status-success"><i class="ri-check-line"></i> COMPLETE</span>',
+        };
+        let logs = [];
+        try { logs = await TruFleet.getLogs({ limit: 8 }); } catch (e) { console.warn('Log fetch failed', e); }
+        const tbody = document.getElementById('live-feed-tbody');
+        if (logs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#94A3B8;padding:2rem;">No log entries yet.</td></tr>';
+        } else {
+            tbody.innerHTML = logs.map(log => `
+                <tr>
+                    <td>${TruFleet.fmtTime(log.timestamp || log.created_at)}</td>
+                    <td class="id-cell">${log.entity_id || log.entityId || '—'}</td>
+                    <td>${log.description || '—'}</td>
+                    <td>${statusMap[log.status] || '<span class="status-pill status-warning">' + (log.status||'') + '</span>'}</td>
+                    <td>${log.detail || '—'}</td>
+                </tr>
+            `).join('');
+        }
+
+        /* ── Compliance Doughnut ── */
+        let vehicles = [];
+        try { vehicles = await TruFleet.getVehicles(); } catch (e) { console.warn('Vehicle fetch failed', e); }
+        const compliant = vehicles.filter(v => TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry) > 7).length;
+        const warning   = vehicles.filter(v => { const d = TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry); return d >= 0 && d <= 7; }).length;
+        const nonComp   = vehicles.filter(v => TruFleet.daysUntilExpiry(v.insurance_expiry || v.insuranceExpiry) < 0).length;
+        const total     = vehicles.length || 1;
+        const pct       = Math.round((compliant / total) * 100);
+
+        const compText = document.getElementById('compliance-text');
+        if (compText) compText.textContent = pct + '% of fleet is fully compliant';
+
+        const ctxCompliance = document.getElementById('complianceChart').getContext('2d');
+        new Chart(ctxCompliance, {
+            type: 'doughnut',
+            data: {
+                labels: ['Compliant', 'Warning (Expiring)', 'Non-Compliant'],
+                datasets: [{ data: [compliant, warning, nonComp], backgroundColor: ['#0F172A', '#F59E0B', '#EF4444'], borderWidth: 0, hoverOffset: 4 }]
+            },
+            options: { responsive: true, cutout: '75%', plugins: { legend: { position: 'bottom' } } }
+        });
+
+        /* ── Animations ── */
+        gsap.from('.gs-fade', { y: 30, duration: 0.8, stagger: 0.1, ease: 'power3.out' });
+
+        /* ── Chart data sets per timeframe ── */
+        const CHART_DATA = {
+            '24h': {
+                labels: ['06:00','08:00','10:00','12:00','14:00','16:00','18:00'],
+                auth:  [12, 45, 67, 89, 120, 95, 60],
+                deny:  [2, 5, 3, 8, 4, 2, 1],
+            },
+            '7d': {
+                labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+                auth:  [340, 420, 390, 510, 480, 220, 180],
+                deny:  [18, 24, 15, 31, 27, 10, 8],
+            },
+            '30d': {
+                labels: ['Wk 1','Wk 2','Wk 3','Wk 4'],
+                auth:  [1820, 2100, 1950, 2340],
+                deny:  [95, 82, 107, 74],
+            },
+        };
+
+        /* ── Dispatch Line Chart ── */
+        const ctxDispatch = document.getElementById('dispatchChart').getContext('2d');
+        const gradientAuth = ctxDispatch.createLinearGradient(0, 0, 0, 350);
+        gradientAuth.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+        gradientAuth.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+        const dispatchChart = new Chart(ctxDispatch, {
+            type: 'line',
+            data: {
+                labels: CHART_DATA['24h'].labels,
+                datasets: [
+                    {
+                        label: 'Authorized',
+                        data: CHART_DATA['24h'].auth,
+                        borderColor: '#10B981',
+                        backgroundColor: gradientAuth,
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                    },
+                    {
+                        label: 'Denied',
+                        data: CHART_DATA['24h'].deny,
+                        borderColor: '#EF4444',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false,
+                        pointRadius: 3,
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', align: 'end' } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#F1F5F9' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        document.getElementById('dispatch-timeframe').addEventListener('change', function () {
+            const d = CHART_DATA[this.value];
+            dispatchChart.data.labels = d.labels;
+            dispatchChart.data.datasets[0].data = d.auth;
+            dispatchChart.data.datasets[1].data = d.deny;
+            dispatchChart.update('active');
+        });
+
+        })(); // end async init
+    </script>
+</body>
+</html>

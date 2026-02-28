@@ -1,0 +1,57 @@
+/**
+ * TruFleet — Express Entry Point
+ */
+
+'use strict';
+
+require('dotenv').config();
+const express    = require('express');
+const cors       = require('cors');
+const bodyParser = require('body-parser');
+const path       = require('path');
+
+const vehiclesRouter      = require('./routes/vehicles');
+const logsRouter          = require('./routes/logs');
+const authRouter          = require('./routes/auth');
+const analyticsRouter     = require('./routes/analytics');
+const notificationsRouter = require('./routes/notifications');
+
+const app  = express();
+const PORT = process.env.PORT || 3000;
+
+/* ── Middleware ── */
+app.use(cors());
+app.use(bodyParser.json());
+
+/* ── Static files — serve HTML pages from project root ── */
+app.use(express.static(path.join(__dirname, '..')));
+
+/* ── API Routes ── */
+app.use('/api/vehicles',      vehiclesRouter);
+app.use('/api/logs',          logsRouter);
+app.use('/api/auth',          authRouter);
+app.use('/api/analytics',     analyticsRouter);
+app.use('/api/notifications', notificationsRouter);
+
+/* ── Health check ── */
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+/* ── Catch-all: serve index (dashboard) for any unmatched route ── */
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'dashboard.html'));
+});
+
+/* ── Global error handler ── */
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  console.error('[TruFleet Error]', err.message);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
+
+app.listen(PORT, () => {
+  console.log(`\n🚛  TruFleet server running at http://localhost:${PORT}`);
+  console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
+  console.log(`   Supabase URL: ${process.env.SUPABASE_URL}\n`);
+});

@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | The Apple of Fleet Intelligence</title>
+    
+    <!-- Premium Font Stack -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <!-- Remix Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- GSAP for Cinematic Motion -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Lenis for Smooth Scrolling (The "Apple" feel) -->
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/bundled/lenis.min.js"></script>
+
+    <style>
+        /* 
+         * TRUFLEET PREMIUM DESIGN SYSTEM - LIGHT THEME
+         * Valuation Target: $100B
+         */
+
+        :root {
+            /* Palette - Institutional Trust */
+            --color-bg: #FFFFFF;
+            --color-bg-alt: #F8FAFC;
+            --color-text-main: #0F172A; /* Deep Navy, almost black */
+            --color-text-muted: #64748B; /* Slate 500 */
+            
+            /* Accents */
+            --color-brand: #0f172a; /* Authority */
+            --color-accent: #0284c7; /* Electric Blue for action */
+            --color-success: #10b981;
+            --color-error: #ef4444;
+
+            /* Physics & Depth */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.01);
+            --shadow-float: 0 30px 60px -12px rgba(15, 23, 42, 0.12);
+            
+            /* Glass */
+            --glass-surface: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(15, 23, 42, 0.06);
+
+            /* Layout */
+            --container-width: 1280px;
+            --radius-lg: 24px;
+            --radius-md: 12px;
+        }
+
+        /* Reset */
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            color: var(--color-text-main);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Manrope', sans-serif; /* Geometric, modern */
+            letter-spacing: -0.03em;
+            color: var(--color-text-main);
+        }
+
+        a { text-decoration: none; color: inherit; }
+        ul { list-style: none; }
+        button { border: none; background: none; cursor: pointer; font-family: inherit; }
+
+        /* Utility */
+        .container {
+            max-width: var(--container-width);
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .section {
+            padding: 8rem 0;
+            position: relative;
+        }
+
+        /* UI Components */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 16px;
+            background: #F1F5F9;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--color-text-main);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 2rem;
+            border-radius: 100px; /* Pill shape is more premium */
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--color-brand);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.3);
+        }
+
+        .btn-secondary {
+            background: #fff;
+            border: 1px solid var(--glass-border);
+            color: var(--color-text-main);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-secondary:hover {
+            background: #F8FAFC;
+            border-color: #CBD5E1;
+        }
+
+        /* Navigation */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            padding: 1.5rem 0;
+            transition: all 0.3s ease;
+        }
+
+        .navbar.scrolled {
+            background: rgba(255, 255, 255, 0.8);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 0;
+        }
+
+        .nav-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -0.04em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2.5rem;
+        }
+
+        .nav-link {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--color-text-muted);
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover { color: var(--color-text-main); }
+
+        /* HERO SECTION - State of the Art Video Integration */
+        .hero {
+            padding-top: 160px;
+            padding-bottom: 100px;
+            text-align: center;
+            background: radial-gradient(circle at 50% 0%, #F1F5F9 0%, #FFFFFF 60%);
+            overflow: hidden;
+        }
+
+        .hero h1 {
+            font-size: 4.5rem; /* Massive typography */
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            opacity: 0; /* GSAP */
+            transform: translateY(30px);
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: var(--color-text-muted);
+            max-width: 600px;
+            margin: 0 auto 3rem;
+            opacity: 0; /* GSAP */
+            transform: translateY(30px);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 5rem;
+            opacity: 0; /* GSAP */
+            transform: translateY(30px);
+        }
+
+        /* The Cinematic Video Container */
+        .video-wrapper {
+            width: 90%;
+            max-width: 1400px;
+            height: 70vh;
+            margin: 0 auto;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow-float);
+            transform: scale(0.9); /* Starts small, expands on scroll */
+            opacity: 0;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 3rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        /* SOCIAL PROOF - Ticker */
+        .ticker-wrap {
+            width: 100%;
+            overflow: hidden;
+            background-color: var(--color-bg);
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--color-bg-alt);
+        }
+
+        .ticker {
+            display: inline-block;
+            white-space: nowrap;
+            animation: ticker 40s linear infinite;
+        }
+
+        .ticker-item {
+            display: inline-block;
+            padding: 0 3rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #CBD5E1; /* Subtle logo color */
+            font-family: 'Manrope', sans-serif;
+        }
+
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        /* BENTO GRID LAYOUT (The Apple Standard) */
+        .bento-section {
+            background: var(--color-bg-alt);
+        }
+
+        .section-header {
+            max-width: 700px;
+            margin: 0 auto 5rem;
+            text-align: center;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 400px);
+            gap: 24px;
+        }
+
+        .bento-card {
+            background: #fff;
+            border-radius: var(--radius-lg);
+            padding: 2.5rem;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-md);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .bento-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .span-2 { grid-column: span 2; }
+        .span-1 { grid-column: span 1; }
+
+        .bento-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .bento-visual {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 100%;
+            height: 60%;
+            background: var(--color-bg-alt);
+            border-top-left-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        /* VISUAL REPRESENTATION OF DISPATCH ENGINE */
+        .dispatch-simulation {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sim-card {
+            width: 280px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .sim-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+
+        .sim-status {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #ECFDF5;
+            color: #059669;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: var(--color-accent);
+            box-shadow: 0 0 10px var(--color-accent);
+            z-index: 3;
+            animation: scan 2s infinite ease-in-out;
+        }
+
+        @keyframes scan {
+            0% { top: 10%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 90%; opacity: 0; }
+        }
+
+        /* PRODUCT SHOWCASE - Parallax */
+        .showcase {
+            background: #000; /* Contrast Section */
+            color: #fff;
+            padding: 0;
+            height: 120vh; /* For scroll animation */
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .showcase-content {
+            text-align: center;
+            z-index: 2;
+            position: relative;
+        }
+
+        .showcase h2 { color: #fff; margin-bottom: 2rem; }
+
+        .dashboard-mockup {
+            width: 80vw;
+            height: 80vh;
+            background: #1e293b;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 100px rgba(0,0,0,0.5);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) perspective(1000px) rotateX(10deg);
+            overflow: hidden;
+        }
+
+        /* FORM SECTION */
+        .cta-box {
+            background: var(--color-bg-alt);
+            border-radius: var(--radius-lg);
+            padding: 5rem 2rem;
+            text-align: center;
+            margin-top: -100px;
+            position: relative;
+            z-index: 10;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .email-field {
+            display: flex;
+            max-width: 500px;
+            margin: 2rem auto 0;
+            background: #fff;
+            padding: 6px;
+            border-radius: 100px;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-md);
+        }
+
+        .email-field input {
+            flex: 1;
+            border: none;
+            padding: 0 1.5rem;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        /* Footer */
+        footer {
+            padding: 4rem 0 2rem;
+            border-top: 1px solid var(--color-bg-alt);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 4rem;
+            margin-bottom: 4rem;
+        }
+
+        .footer-brand h3 { margin-bottom: 1rem; font-size: 1.25rem; }
+        .footer-brand p { color: var(--color-text-muted); max-width: 300px; }
+
+        .footer-links h4 { font-size: 0.9rem; margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .footer-links ul li { margin-bottom: 0.8rem; }
+        .footer-links a { color: var(--color-text-muted); transition: color 0.2s; }
+        .footer-links a:hover { color: var(--color-text-main); }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .bento-grid { grid-template-columns: 1fr; grid-template-rows: auto; }
+            .span-2 { grid-column: span 1; }
+            .hero h1 { font-size: 3rem; }
+            .footer-grid { grid-template-columns: 1fr; gap: 2rem; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Smooth Scroll Wrapper -->
+    <nav class="navbar">
+        <div class="container nav-inner">
+            <a href="#" class="logo">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="24" height="24" rx="6" fill="#0F172A"/>
+                    <path d="M7 12H17M7 8H17M7 16H13" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                TRUFLEET
+            </a>
+            <div class="nav-links desktop-only">
+                <a href="#product" class="nav-link">Platform</a>
+                <a href="#solutions" class="nav-link">Solutions</a>
+                <a href="#company" class="nav-link">Company</a>
+                <a href="register.html" class="nav-link">Sign In</a>
+            </div>
+            <a href="register.html" class="btn btn-primary">Start Now</a>
+        </div>
+    </nav>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="container">
+                <div class="badge">Series B Funding Secured</div>
+                <h1>The Operating System for<br>Global Logistics</h1>
+                <p>Monitor, authorize, and optimize your fleet with cinematic precision.<br>Confidence in every mile.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary">Request Access</button>
+                    <button class="btn btn-secondary"><i class="ri-play-fill"></i> Watch Keynote</button>
+                </div>
+            </div>
+
+            <!-- State of the Art Video Container -->
+            <div class="video-wrapper" id="heroVideo">
+                <!-- Placeholder Video (Cinematic Trucking/Tech) -->
+                <video autoplay loop muted playsinline poster="https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg">
+                    <source src="https://player.vimeo.com/external/371843343.sd.mp4?s=d44840e53528b6d8574d6100570b540203f56d95&profile_id=164&oauth2_token_id=57447761" type="video/mp4">
+                </video>
+                <div class="video-overlay">
+                    <div>
+                        <div style="font-family: 'Manrope'; font-weight: 700; font-size: 1.2rem;">Live Intelligence</div>
+                        <div style="opacity: 0.8; font-size: 0.9rem;">Processing 14,000 events/sec</div>
+                    </div>
+                    <div style="width: 40px; height: 40px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="ri-sound-module-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Social Proof Ticker -->
+        <div class="ticker-wrap">
+            <div class="ticker">
+                <div class="ticker-item">FEDEX</div>
+                <div class="ticker-item">MAERSK</div>
+                <div class="ticker-item">UBER FREIGHT</div>
+                <div class="ticker-item">DHL SUPPLY CHAIN</div>
+                <div class="ticker-item">XPO LOGISTICS</div>
+                <div class="ticker-item">JB HUNT</div>
+                <div class="ticker-item">FEDEX</div> <!-- Repeat for loop -->
+                <div class="ticker-item">MAERSK</div>
+                <div class="ticker-item">UBER FREIGHT</div>
+            </div>
+        </div>
+
+        <!-- Vision / Philosophy -->
+        <section class="section" id="vision">
+            <div class="container">
+                <div style="display: flex; gap: 4rem; align-items: flex-start;">
+                    <h2 style="font-size: 2.5rem; flex: 1;">We don't just manage vehicles.<br>We orchestrate trust.</h2>
+                    <p style="flex: 1; color: var(--color-text-muted); font-size: 1.1rem;">
+                        TruFleet replaces archaic spreadsheets and clunky legacy software with a pristine, digital ecosystem. We believe fleet management should be as intuitive as your iPhone and as reliable as a Swiss watch.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bento Grid Features -->
+        <section class="section bento-section" id="product">
+            <div class="container">
+                <div class="section-header">
+                    <div class="badge">The Ecosystem</div>
+                    <h2>Everything you need.<br>Nothing you don't.</h2>
+                </div>
+
+                <div class="bento-grid">
+                    <!-- Dispatch Card (Span 2) -->
+                    <div class="bento-card span-2 card-anim">
+                        <div class="bento-content">
+                            <h3>Dispatch Control</h3>
+                            <p style="color: var(--color-text-muted); margin-top: 0.5rem;">Cryptographic authorization before engines start.</p>
+                        </div>
+                        <div class="bento-visual">
+                            <div class="dispatch-simulation">
+                                <div class="sim-card">
+                                    <div class="scan-line"></div>
+                                    <div style="text-align: center; margin-bottom: 1rem;">
+                                        <div style="width: 40px; height: 40px; background: #F1F5F9; border-radius: 50%; margin: 0 auto;"></div>
+                                    </div>
+                                    <div class="sim-row"><span>Vehicle</span> <strong>TN-45-AB</strong></div>
+                                    <div class="sim-row"><span>Insurance</span> <span style="color: #10B981;">Valid</span></div>
+                                    <div class="sim-row"><span>Auth</span> <span class="sim-status">GRANTED</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Owner Portal (Span 1) -->
+                    <div class="bento-card span-1 card-anim">
+                        <div class="bento-content">
+                            <h3>Owner Transparency</h3>
+                            <p style="color: var(--color-text-muted);">Real-time earnings & compliance for partners.</p>
+                        </div>
+                        <div class="bento-visual" style="background: url('https://images.unsplash.com/photo-1586864387967-d02ef85d93e8?auto=format&fit=crop&q=80') center/cover;"></div>
+                    </div>
+
+                    <!-- Analytics (Span 1) -->
+                    <div class="bento-card span-1 card-anim">
+                        <div class="bento-content">
+                            <h3>Predictive Analytics</h3>
+                            <p style="color: var(--color-text-muted);">Forecast maintenance costs.</p>
+                        </div>
+                        <!-- Simple Chart Visual -->
+                        <div class="bento-visual" style="padding: 20px; display: flex; align-items: flex-end; gap: 10px;">
+                            <div style="flex: 1; height: 40%; background: #E2E8F0; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 60%; background: #E2E8F0; border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 85%; background: var(--color-brand); border-radius: 4px;"></div>
+                            <div style="flex: 1; height: 50%; background: #E2E8F0; border-radius: 4px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Admin (Span 2) -->
+                    <div class="bento-card span-2 card-anim">
+                        <div class="bento-content">
+                            <h3>Command Center</h3>
+                            <p style="color: var(--color-text-muted);">God-mode view of your entire operation.</p>
+                        </div>
+                         <div class="bento-visual" style="padding: 2rem;">
+                            <div style="background: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-radius: 8px; height: 100%; width: 100%;">
+                                <div style="border-bottom: 1px solid #f1f5f9; padding: 10px; display: flex; gap: 8px;">
+                                    <div style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%;"></div>
+                                    <div style="width: 8px; height: 8px; background: #f59e0b; border-radius: 50%;"></div>
+                                    <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Form / CTA -->
+        <section class="section" style="padding-bottom: 8rem;">
+            <div class="container">
+                <div class="cta-box">
+                    <h2 style="font-size: 2.5rem;">Ready to upgrade?</h2>
+                    <p style="color: var(--color-text-muted); margin-top: 1rem;">Join the waitlist for Enterprise Early Access.</p>
+                    
+                    <form class="email-field">
+                        <input type="email" placeholder="work@company.com">
+                        <button type="submit" class="btn btn-primary">Join</button>
+                    </form>
+                    <p style="font-size: 0.8rem; color: #94A3B8; margin-top: 1rem;">No credit card required for demo.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo" style="margin-bottom: 1rem;">TRUFLEET</div>
+                    <p>The new standard for fleet management. Built for the modern enterprise.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Product</h4>
+                    <ul>
+                        <li><a href="#">Features</a></li>
+                        <li><a href="#">Security</a></li>
+                        <li><a href="#">Enterprise</a></li>
+                        <li><a href="#">Changelog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <ul>
+                        <li><a href="#">About</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Legal</a></li>
+                        <li><a href="#">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Social</h4>
+                    <ul>
+                        <li><a href="#">Twitter / X</a></li>
+                        <li><a href="#">LinkedIn</a></li>
+                        <li><a href="#">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; color: #94A3B8; padding-top: 2rem; border-top: 1px solid #F1F5F9;">
+                <div>&copy; 2026 TruFleet Inc.</div>
+                <div style="display: flex; gap: 1rem;">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lenis for buttery smooth scrolling
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), // Apple-like ease
+            direction: 'vertical',
+            smooth: true
+        });
+
+        function raf(time) {
+            lenis.raf(time);
+            requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+
+        // GSAP Setup
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Navbar blur on scroll
+        const navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Hero Animations
+        const heroTl = gsap.timeline();
+        heroTl.to(".hero h1", { opacity: 1, y: 0, duration: 1, ease: "power4.out" })
+              .to(".hero p", { opacity: 1, y: 0, duration: 1, ease: "power3.out" }, "-=0.8")
+              .to(".hero-actions", { opacity: 1, y: 0, duration: 1, ease: "power3.out" }, "-=0.8")
+              .to(".video-wrapper", { opacity: 1, scale: 1, duration: 1.5, ease: "power4.out" }, "-=0.5");
+
+        // Video Expansion on Scroll
+        gsap.to("#heroVideo", {
+            width: "100%",
+            borderRadius: "0px",
+            scrollTrigger: {
+                trigger: ".hero",
+                start: "center top", // When hero center hits top
+                end: "bottom top",
+                scrub: 1
+            }
+        });
+
+        // Bento Cards Stagger
+        gsap.utils.toArray('.card-anim').forEach((card, i) => {
+            gsap.from(card, {
+                scrollTrigger: {
+                    trigger: card,
+                    start: "top 85%",
+                },
+                y: 50,
+                opacity: 0,
+                duration: 1,
+                ease: "power3.out"
+            });
+        });
+
+        // Sim Card Hover Effect (Physics)
+        const cards = document.querySelectorAll('.bento-card');
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Subtle tilt
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = ((y - centerY) / centerY) * -2; // Max 2deg
+                const rotateY = ((x - centerX) / centerX) * 2;
+
+                gsap.to(card, {
+                    transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)`,
+                    duration: 0.5
+                });
+            });
+
+            card.addEventListener('mouseleave', () => {
+                gsap.to(card, {
+                    transform: `perspective(1000px) rotateX(0) rotateY(0) translateY(0)`,
+                    duration: 0.5
+                });
+            });
+        });
+
+    </script>
+</body>
+</html>
