@@ -16,6 +16,9 @@ const authRouter            = require('./routes/auth');
 const analyticsRouter       = require('./routes/analytics');
 const notificationsRouter   = require('./routes/notifications');
 const fleetVehiclesRouter   = require('./routes/fleet_vehicles');
+const emailRecipientsRouter = require('./routes/email_recipients');
+
+const { startScheduler } = require('./services/scheduler');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -46,12 +49,13 @@ app.get('/fleet-register', (_req, res) => {
 });
 
 /* ── API Routes ── */
-app.use('/api/vehicles',       vehiclesRouter);
-app.use('/api/logs',           logsRouter);
-app.use('/api/auth',           authRouter);
-app.use('/api/analytics',      analyticsRouter);
-app.use('/api/notifications',  notificationsRouter);
-app.use('/api/fleet-vehicles', fleetVehiclesRouter);
+app.use('/api/vehicles',          vehiclesRouter);
+app.use('/api/logs',              logsRouter);
+app.use('/api/auth',              authRouter);
+app.use('/api/analytics',         analyticsRouter);
+app.use('/api/notifications',     notificationsRouter);
+app.use('/api/fleet-vehicles',    fleetVehiclesRouter);
+app.use('/api/email-recipients',  emailRecipientsRouter);
 
 /* ── Health check ── */
 app.get('/api/health', (_req, res) => {
@@ -74,4 +78,5 @@ app.listen(PORT, () => {
   console.log(`\n🚛  TruFleet server running at http://localhost:${PORT}`);
   console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
   console.log(`   Supabase URL: ${process.env.SUPABASE_URL}\n`);
+  startScheduler();
 });

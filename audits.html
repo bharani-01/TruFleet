@@ -225,7 +225,7 @@
         /* Column Headers */
         .log-header {
             display: grid;
-            grid-template-columns: 80px 140px 180px 1.5fr 140px 1fr 40px;
+            grid-template-columns: 50px 130px 175px 1.5fr 120px 110px 40px;
             padding: 0 1.5rem 1rem 1.5rem;
             color: var(--text-tertiary);
             font-size: 0.75rem;
@@ -252,7 +252,7 @@
 
         .log-summary {
             display: grid;
-            grid-template-columns: 80px 140px 180px 1.5fr 140px 1fr 40px;
+            grid-template-columns: 50px 130px 175px 1.5fr 120px 110px 40px;
             align-items: center;
             padding: 1rem 1.5rem;
         }
@@ -331,6 +331,97 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
 
+        /* ─── Stats Summary Bar ─── */
+        .stats-bar {
+            display: flex; gap: 0.75rem; padding: 0.9rem 2.5rem;
+            border-bottom: 1px solid #E2E8F0; background: white;
+        }
+        .stat-chip {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 16px; border-radius: 10px; border: 1px solid #E2E8F0;
+            background: #F8FAFC; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);
+        }
+        .stat-chip .stat-num { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+        .stat-chip.sc-auth  { border-color: #A7F3D0; background: #F0FDF4; color: #059669; }
+        .stat-chip.sc-auth .stat-num { color: #059669; }
+        .stat-chip.sc-deny  { border-color: #FECACA; background: #FEF2F2; color: #DC2626; }
+        .stat-chip.sc-deny .stat-num { color: #DC2626; }
+        .stat-chip.sc-sys   { border-color: #BFDBFE; background: #EFF6FF; color: #2563EB; }
+        .stat-chip.sc-sys .stat-num { color: #2563EB; }
+        .stat-chip.sc-warn  { border-color: #FDE68A; background: #FFFBEB; color: #D97706; }
+        .stat-chip.sc-warn .stat-num { color: #D97706; }
+        .stats-spacer { flex: 1; }
+        .log-count-label { font-size: 0.78rem; color: #94A3B8; align-self: center; font-weight: 500; }
+
+        /* ─── Actor Avatar ─── */
+        .actor-avatar {
+            width: 30px; height: 30px; border-radius: 7px;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 0.65rem; font-weight: 700; color: white; flex-shrink: 0;
+            font-family: 'Manrope', sans-serif;
+        }
+        .actor-cell { display: flex; align-items: center; gap: 8px; overflow: hidden; }
+        .actor-info { display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .actor-name { font-size: 0.82rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .actor-entity { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* ─── Timestamp 2-line ─── */
+        .ts-wrap { display: flex; flex-direction: column; gap: 2px; }
+        .ts-date { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-primary); font-weight: 600; }
+        .ts-time { font-family: 'JetBrains Mono', monospace; font-size: 0.73rem; color: var(--text-tertiary); }
+
+        /* ─── Module tag ─── */
+        .module-cell { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+        .module-tag {
+            display: inline-block; padding: 2px 8px; border-radius: 5px;
+            font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+            background: #F1F5F9; color: #64748B; border: 1px solid #E2E8F0; white-space: nowrap;
+        }
+        .sev-row { display: flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 600; }
+        .sev-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .sev-low      { background: #10B981; }
+        .sev-medium   { background: #F59E0B; }
+        .sev-high     { background: #F97316; }
+        .sev-critical { background: #EF4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.3); }
+        .sev-low-text { color: #059669; } .sev-medium-text { color: #D97706; }
+        .sev-high-text { color: #EA580C; } .sev-critical-text { color: #DC2626; }
+
+        /* ─── Left border on entries ─── */
+        .log-entry { border-left: 3px solid transparent !important; }
+        .log-entry.border-success { border-left-color: #10B981 !important; }
+        .log-entry.border-deny    { border-left-color: #EF4444 !important; }
+        .log-entry.border-info    { border-left-color: #3B82F6 !important; }
+        .log-entry.border-warn    { border-left-color: #F59E0B !important; }
+
+        /* ─── Rich Drawer ─── */
+        .drawer-meta-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 1rem; padding: 1.25rem 1.5rem;
+            background: white; border-bottom: 1px solid #F1F5F9;
+        }
+        .drawer-meta { display: flex; flex-direction: column; gap: 3px; }
+        .drawer-meta-label { font-size: 0.67rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: #94A3B8; }
+        .drawer-meta-value { font-size: 0.82rem; font-weight: 500; color: #0F172A; font-family: 'JetBrains Mono', monospace; word-break: break-all; }
+        .drawer-section-title { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94A3B8; padding: 0.75rem 1.5rem 0.35rem; }
+
+        /* ─── Delta / Before·After ─── */
+        .delta-wrap { padding: 0 1.5rem 1rem; }
+        .delta-table { width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; border: 1px solid #E2E8F0; font-size: 0.8rem; }
+        .delta-table th { text-align: left; padding: 6px 12px; font-size: 0.67rem; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; background: #F8FAFC; }
+        .delta-table td { padding: 6px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.77rem; border-top: 1px solid #F1F5F9; }
+        .delta-before { color: #DC2626; background: #FFF5F5; }
+        .delta-after  { color: #059669; background: #F0FDF4; }
+        .delta-field  { color: #64748B; font-weight: 600; }
+
+        /* ─── Tags ─── */
+        .tags-row { display: flex; gap: 6px; flex-wrap: wrap; padding: 0.5rem 1.5rem 1rem; }
+        .tag-chip { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 0.7rem; font-weight: 600; background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; }
+
+        /* ─── Risk score bar ─── */
+        .risk-bar-wrap { display: flex; align-items: center; gap: 8px; }
+        .risk-bar-bg { flex: 1; height: 5px; background: #F1F5F9; border-radius: 10px; overflow: hidden; }
+        .risk-bar-fill { height: 100%; border-radius: 10px; }
+
     </style>
 </head>
 <body>
@@ -351,7 +442,7 @@
             <a href="insurance_monitor.html" class="nav-item">
                 <i class="ri-shield-check-line"></i><span class="nav-label">Insurance Monitor</span>
             </a>
-            <a href="audits.html" class="nav-item active">
+            <a href="email_recipients.html" class="nav-item"><i class="ri-mail-settings-line"></i><span class="nav-label">Email Recipients</span></a>`n            <a href="audits.html" class="nav-item active">
                 <i class="ri-file-list-3-line"></i><span class="nav-label">Audit Logs</span>
             </a>
             <div style="flex: 1"></div>
@@ -415,8 +506,26 @@
                     <option value="UPDATE">UPDATE</option>
                     <option value="DELETE">DELETE</option>
                 </select>
+                <select id="filterSevSelect" onchange="applySevFilter(this.value)" style="padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-family:'Inter';font-size:0.9rem;color:#64748B;cursor:pointer;background:white;">
+                    <option value="ALL">All Severity</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                </select>
                 <button class="btn-filter" id="exportLogsBtn"><i class="ri-download-line"></i> Export</button>
             </div>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar" id="statsBar">
+            <div class="stat-chip" id="sc-total"><span class="stat-num" id="sn-total">—</span> Total</div>
+            <div class="stat-chip sc-auth"  id="sc-auth" ><span class="stat-num" id="sn-auth" >—</span> Authorized</div>
+            <div class="stat-chip sc-deny"  id="sc-deny" ><span class="stat-num" id="sn-deny" >—</span> Denied</div>
+            <div class="stat-chip sc-sys"   id="sc-sys"  ><span class="stat-num" id="sn-sys"  >—</span> System</div>
+            <div class="stat-chip sc-warn"  id="sc-warn" ><span class="stat-num" id="sn-warn" >—</span> Warnings</div>
+            <div class="stats-spacer"></div>
+            <span class="log-count-label" id="filteredCount"></span>
         </div>
 
         <div class="log-container">
@@ -425,10 +534,10 @@
             <div class="log-header">
                 <div>Type</div>
                 <div>Timestamp</div>
-                <div>Entity ID</div>
+                <div>Actor / Entity</div>
                 <div>Event Description</div>
                 <div>Status</div>
-                <div>Details</div>
+                <div>Module / Sev.</div>
                 <div></div>
             </div>
 
@@ -441,87 +550,235 @@
 
     <script>
         /* ── State ── */
-        let auditFilter = 'ALL';
-        let auditSearch = '';
+        let auditFilter  = 'ALL';
+        let auditSev     = 'ALL';
+        let auditSearch  = '';
         let auditDateFrom = '';
         let auditDateTo   = '';
         let allLogs = [];
-        let isLive = false;
+        let isLive  = false;
         let liveInterval;
 
-        /* ── Icon/badge helpers ── */
-        function logIcon(type, status) {
-            if (status === 'AUTHORIZED' || status === 'SUCCESS' || status === 'COMPLETE') return { color: '#059669', bg: '#ECFDF5', icon: 'ri-key-2-line' };
-            if (status === 'DENIED')  return { color: '#DC2626', bg: '#FEF2F2', icon: 'ri-alarm-warning-line' };
-            if (type  === 'SYSTEM')   return { color: '#3B82F6', bg: '#EFF6FF', icon: 'ri-database-2-line' };
-            if (type  === 'ADMIN')    return { color: '#64748B', bg: '#F1F5F9', icon: 'ri-user-settings-line' };
-            return { color: '#94A3B8', bg: '#F8FAFC', icon: 'ri-information-line' };
+        /* ── Avatar color palette ── */
+        const AVATAR_COLORS = ['#3B82F6','#8B5CF6','#EC4899','#10B981','#F59E0B','#EF4444','#06B6D4','#84CC16'];
+        function avatarColor(str) {
+            if (!str) return '#94A3B8';
+            let h = 0;
+            for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) & 0xFFFFFF;
+            return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
+        }
+        function initials(name) {
+            if (!name || name === 'SYSTEM') return 'SY';
+            const parts = name.trim().split(/\s+/);
+            return (parts[0][0] + (parts[1] ? parts[1][0] : parts[0][1] || '')).toUpperCase();
         }
 
+        /* ── Icon / badge helpers ── */
+        const TYPE_META = {
+            AUTH:   { icon: 'ri-key-2-line',          defColor: '#3B82F6', defBg: '#EFF6FF' },
+            ADMIN:  { icon: 'ri-user-settings-line',   defColor: '#8B5CF6', defBg: '#F5F3FF' },
+            SYSTEM: { icon: 'ri-database-2-line',      defColor: '#64748B', defBg: '#F1F5F9' },
+            CREATE: { icon: 'ri-add-circle-line',      defColor: '#10B981', defBg: '#ECFDF5' },
+            UPDATE: { icon: 'ri-edit-box-line',        defColor: '#F59E0B', defBg: '#FFFBEB' },
+            DELETE: { icon: 'ri-delete-bin-5-line',    defColor: '#EF4444', defBg: '#FEF2F2' },
+        };
+        function logIcon(type, status) {
+            const meta = TYPE_META[type] || { icon: 'ri-information-line', defColor: '#94A3B8', defBg: '#F8FAFC' };
+            if (status === 'DENIED')  return { color: '#DC2626', bg: '#FEF2F2', icon: 'ri-alarm-warning-line' };
+            if (status === 'AUTHORIZED' || status === 'SUCCESS' || status === 'COMPLETE')
+                return { color: '#059669', bg: '#ECFDF5', icon: meta.icon };
+            return { color: meta.defColor, bg: meta.defBg, icon: meta.icon };
+        }
         function badgeClass(status) {
             if (status === 'AUTHORIZED' || status === 'SUCCESS' || status === 'COMPLETE') return 'status-auth';
             if (status === 'DENIED') return 'status-deny';
             return 'status-sys';
         }
+        function borderClass(status) {
+            if (status === 'AUTHORIZED' || status === 'SUCCESS' || status === 'COMPLETE') return 'border-success';
+            if (status === 'DENIED') return 'border-deny';
+            if (status === 'WARNING') return 'border-warn';
+            return 'border-info';
+        }
+        function sevInfo(sev) {
+            const s = (sev || 'low').toLowerCase();
+            if (s === 'critical') return { dot: 'sev-dot sev-critical', txt: 'sev-critical-text', label: 'Critical' };
+            if (s === 'high')     return { dot: 'sev-dot sev-high',     txt: 'sev-high-text',     label: 'High' };
+            if (s === 'medium')   return { dot: 'sev-dot sev-medium',   txt: 'sev-medium-text',   label: 'Medium' };
+            return                       { dot: 'sev-dot sev-low',      txt: 'sev-low-text',      label: 'Low' };
+        }
+        function riskBarColor(score) {
+            if (score >= 75) return '#EF4444';
+            if (score >= 50) return '#F97316';
+            if (score >= 25) return '#F59E0B';
+            return '#10B981';
+        }
+        function fmtDate(ts) {
+            if (!ts) return { date: '—', time: '—' };
+            const d = new Date(ts);
+            return {
+                date: d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+                time: d.toTimeString().slice(0, 8)
+            };
+        }
+        function escHtml(s) {
+            return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
 
+        /* ── Main render function ── */
         function renderLogEntry(log) {
-            const ts  = log.created_at || log.timestamp || '';
-            const time = ts ? new Date(ts).toTimeString().slice(0, 12) : '—';
-            const entityId = log.entity_id || log.entityId || 'SYSTEM';
-            const desc = log.description || '—';
-            const detail = log.detail || '—';
-            const status = (log.status || 'INFO').toUpperCase();
-            const type = (log.type || 'SYSTEM').toUpperCase();
+            const ts      = log.created_at || log.timestamp || '';
+            const { date, time } = fmtDate(ts);
+            const entityId = escHtml(log.entity_id || log.entityId || 'SYSTEM');
+            const desc    = escHtml(log.description || '—');
+            const status  = (log.status || 'INFO').toUpperCase();
+            const type    = (log.type   || 'SYSTEM').toUpperCase();
             const { color, bg, icon } = logIcon(type, status);
-            const badgeCls  = badgeClass(status);
-            const jsonData  = log.json_data || log.json || {};
-            const jsonStr   = JSON.stringify(jsonData, null, 2)
-                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g,'&gt;')
-                .replace(/"([^"]+)":/g, '<span class="key">"$1":</span>')
-                .replace(/: "([^"]*)"/g, ': <span class="string">"$1"</span>')
-                .replace(/: (\d+)/g, ': <span class="number">$1</span>')
-                .replace(/: (true|false)/g, ': <span class="boolean">$1</span>');
+            const jd      = log.json_data || log.json || {};
+
+            /* Pull detail fields from log root or json_data */
+            const actor      = escHtml(log.actor      || jd.actor      || jd.user    || 'System');
+            const ipAddress  = escHtml(log.ip_address || jd.ip_address || jd.ip      || '—');
+            const sessionId  = escHtml(log.session_id || jd.session_id              || '—');
+            const module     = escHtml(log.module     || jd.module                  || type);
+            const severity   = (log.severity  || jd.severity  || 'low').toLowerCase();
+            const durationMs = log.duration_ms || jd.duration_ms;
+            const riskScore  = log.risk_score  || jd.risk_score || 0;
+            const tags       = [].concat(log.tags || jd.tags || []);
+            const userAgent  = escHtml(log.user_agent  || jd.user_agent  || '—');
+            const requestId  = escHtml(log.request_id  || jd.request_id  || '—');
+            const beforeData = log.before || jd.before || null;
+            const afterData  = log.after  || jd.after  || null;
+
+            const sev   = sevInfo(severity);
+            const bCls  = borderClass(status);
+            const color_avatar = avatarColor(actor);
+            const inits = initials(actor);
+
+            /* Delta table (before/after) */
+            let deltaHtml = '';
+            if (beforeData || afterData) {
+                const keys = [...new Set([...Object.keys(beforeData||{}), ...Object.keys(afterData||{})])];
+                const rows = keys.map(k => `
+                    <tr>
+                        <td class="delta-field">${escHtml(k)}</td>
+                        <td class="delta-before">${escHtml(JSON.stringify((beforeData||{})[k] ?? '—'))}</td>
+                        <td class="delta-after">${escHtml(JSON.stringify((afterData||{})[k]  ?? '—'))}</td>
+                    </tr>`).join('');
+                deltaHtml = `
+                    <div class="drawer-section-title">Changes</div>
+                    <div class="delta-wrap">
+                        <table class="delta-table">
+                            <thead><tr><th>Field</th><th>Before</th><th>After</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>`;
+            }
+
+            /* Tags row */
+            const tagsHtml = tags.length ? `<div class="tags-row">${tags.map(t=>`<span class="tag-chip">${escHtml(t)}</span>`).join('')}</div>` : '';
+
+            /* Risk bar */
+            const riskHtml = `<div class="risk-bar-wrap"><span style="font-size:0.78rem;font-weight:600;color:#64748B;min-width:22px;">${riskScore}</span><div class="risk-bar-bg"><div class="risk-bar-fill" style="width:${riskScore}%;background:${riskBarColor(riskScore)};"></div></div></div>`;
+
+            /* JSON payload */
+            const jsonStr = JSON.stringify(jd, null, 2)
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                .replace(/"([^"]+)":/g,'<span class="key">"$1":</span>')
+                .replace(/: "([^"]*)"/g,': <span class="string">"$1"</span>')
+                .replace(/: (-?\d+\.?\d*)/g,': <span class="number">$1</span>')
+                .replace(/: (true|false)/g,': <span class="boolean">$1</span>');
+
             return `
-                <div class="log-entry" onclick="toggleDetails(this)">
+                <div class="log-entry ${bCls}" onclick="toggleDetails(this)">
                     <div class="log-summary">
                         <div class="log-icon" style="color:${color};background:${bg};"><i class="${icon}"></i></div>
-                        <div class="timestamp">${time}</div>
-                        <div class="mono-text">${entityId}</div>
+                        <div class="ts-wrap"><div class="ts-date">${date}</div><div class="ts-time">${time}</div></div>
+                        <div class="actor-cell">
+                            <div class="actor-avatar" style="background:${color_avatar};">${inits}</div>
+                            <div class="actor-info">
+                                <span class="actor-name">${actor}</span>
+                                <span class="actor-entity">${entityId}</span>
+                            </div>
+                        </div>
                         <div class="reason-text">${desc}</div>
-                        <div><span class="status-badge ${badgeCls}">${status.charAt(0)+status.slice(1).toLowerCase()}</span></div>
-                        <div class="${status==='DENIED'?'reason-critical':'reason-text'}">${detail}</div>
+                        <div><span class="status-badge ${badgeClass(status)}">${status.charAt(0)+status.slice(1).toLowerCase()}</span></div>
+                        <div class="module-cell">
+                            <span class="module-tag">${module}</span>
+                            <div class="sev-row"><span class="${sev.dot}"></span><span class="${sev.txt}">${sev.label}</span></div>
+                        </div>
                         <div><i class="ri-arrow-down-s-line expand-icon"></i></div>
                     </div>
                     <div class="log-details">
+                        <!-- Metadata grid -->
+                        <div class="drawer-meta-grid">
+                            <div class="drawer-meta"><span class="drawer-meta-label">Actor</span><span class="drawer-meta-value">${actor}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">IP Address</span><span class="drawer-meta-value">${ipAddress}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">Session ID</span><span class="drawer-meta-value">${sessionId}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">Request ID</span><span class="drawer-meta-value">${requestId}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">Module</span><span class="drawer-meta-value">${module}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">Severity</span><span class="drawer-meta-value ${sev.txt}">${sev.label}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">Duration</span><span class="drawer-meta-value">${durationMs != null ? durationMs+'ms' : '—'}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">Risk Score</span>${riskHtml}</div>
+                        </div>
+                        <div class="drawer-meta-grid" style="grid-template-columns:1fr 1fr;padding:0.9rem 1.5rem;">
+                            <div class="drawer-meta"><span class="drawer-meta-label">Full Timestamp</span><span class="drawer-meta-value">${escHtml(ts)}</span></div>
+                            <div class="drawer-meta"><span class="drawer-meta-label">User Agent</span><span class="drawer-meta-value" style="font-size:0.72rem;">${userAgent}</span></div>
+                        </div>
+                        <!-- Delta (before/after) -->
+                        ${deltaHtml}
+                        <!-- Tags -->
+                        ${tagsHtml}
+                        <!-- Raw payload -->
+                        <div class="drawer-section-title">Raw Payload</div>
                         <div class="json-viewer"><pre style="white-space:pre-wrap;font-family:inherit;">${jsonStr}</pre></div>
                     </div>
                 </div>`;
         }
 
+        /* ── Stats bar ── */
+        function updateStats(logs) {
+            const total = logs.length;
+            const auth  = logs.filter(l => ['AUTHORIZED','SUCCESS','COMPLETE'].includes((l.status||'').toUpperCase())).length;
+            const deny  = logs.filter(l => (l.status||'').toUpperCase() === 'DENIED').length;
+            const sys   = logs.filter(l => (l.type||'').toUpperCase() === 'SYSTEM').length;
+            const warn  = logs.filter(l => (l.status||'').toUpperCase() === 'WARNING').length;
+            document.getElementById('sn-total').textContent = total;
+            document.getElementById('sn-auth').textContent  = auth;
+            document.getElementById('sn-deny').textContent  = deny;
+            document.getElementById('sn-sys').textContent   = sys;
+            document.getElementById('sn-warn').textContent  = warn;
+        }
+
+        /* ── Filters ── */
         function applyFilters(logs) {
             let result = logs;
             if (auditFilter !== 'ALL') result = result.filter(l => (l.type||'').toUpperCase() === auditFilter);
+            if (auditSev !== 'ALL') {
+                result = result.filter(l => {
+                    const jd = l.json_data || l.json || {};
+                    const sev = (l.severity || jd.severity || 'low').toLowerCase();
+                    return sev === auditSev;
+                });
+            }
             if (auditSearch) {
                 const q = auditSearch.toLowerCase();
-                result = result.filter(l =>
-                    (l.entity_id||l.entityId||'').toLowerCase().includes(q) ||
-                    (l.description||'').toLowerCase().includes(q) ||
-                    (l.detail||'').toLowerCase().includes(q)
-                );
+                result = result.filter(l => {
+                    const jd = l.json_data || l.json || {};
+                    return (l.entity_id||l.entityId||'').toLowerCase().includes(q)
+                        || (l.description||'').toLowerCase().includes(q)
+                        || (l.detail||'').toLowerCase().includes(q)
+                        || (l.actor||jd.actor||jd.user||'').toLowerCase().includes(q)
+                        || (l.module||jd.module||'').toLowerCase().includes(q);
+                });
             }
             if (auditDateFrom) {
                 const from = new Date(auditDateFrom).getTime();
-                result = result.filter(l => {
-                    const ts = l.created_at || l.timestamp;
-                    return ts && new Date(ts).getTime() >= from;
-                });
+                result = result.filter(l => { const ts = l.created_at||l.timestamp; return ts && new Date(ts).getTime() >= from; });
             }
             if (auditDateTo) {
                 const to = new Date(auditDateTo + 'T23:59:59').getTime();
-                result = result.filter(l => {
-                    const ts = l.created_at || l.timestamp;
-                    return ts && new Date(ts).getTime() <= to;
-                });
+                result = result.filter(l => { const ts = l.created_at||l.timestamp; return ts && new Date(ts).getTime() <= to; });
             }
             return result;
         }
@@ -529,22 +786,25 @@
         function renderFeed() {
             const stream = document.getElementById('feedStream');
             const filtered = applyFilters(allLogs);
+            const lbl = document.getElementById('filteredCount');
+            if (lbl) lbl.textContent = filtered.length < allLogs.length ? `Showing ${filtered.length} of ${allLogs.length}` : `${allLogs.length} entries`;
             if (filtered.length === 0) {
                 stream.innerHTML = '<div style="text-align:center;padding:3rem;color:#94A3B8;"><i class="ri-file-list-3-line" style="font-size:2rem;"></i><p style="margin-top:1rem;">No log entries found.</p></div>';
                 return;
             }
             stream.innerHTML = filtered.map(renderLogEntry).join('');
-            gsap.from('.log-entry', { y: 20, duration: 0.4, stagger: 0.05, ease: 'power2.out' });
+            gsap.from('.log-entry', { y: 16, opacity: 0, duration: 0.35, stagger: 0.04, ease: 'power2.out' });
         }
 
         /* ── Load logs ── */
         async function loadLogs() {
             try {
-                allLogs = await TruFleet.getLogs({ limit: 100 });
+                allLogs = await TruFleet.getLogs({ limit: 200 });
             } catch (e) {
                 console.warn('Failed to load audit logs', e);
                 allLogs = [];
             }
+            updateStats(allLogs);
             renderFeed();
         }
 
@@ -556,13 +816,13 @@
             renderFeed();
         });
 
-        /* ── Type Filter (dropdown) ── */
-        function applyTypeFilter(val) {
-            auditFilter = val || 'ALL';
-            renderFeed();
-        }
+        /* ── Type filter ── */
+        function applyTypeFilter(val) { auditFilter = val || 'ALL'; renderFeed(); }
 
-        /* ── Date Range Filter ── */
+        /* ── Severity filter ── */
+        function applySevFilter(val) { auditSev = val || 'ALL'; renderFeed(); }
+
+        /* ── Date range filter ── */
         function applyDateFilter() {
             auditDateFrom = document.getElementById('dateFrom').value;
             auditDateTo   = document.getElementById('dateTo').value;
@@ -572,10 +832,21 @@
         /* ── Export CSV ── */
         document.getElementById('exportLogsBtn').addEventListener('click', function () {
             const filtered = applyFilters(allLogs);
-            const headers = 'Timestamp,Type,EntityID,Description,Status,Detail';
-            const rows = filtered.map(l =>
-                [l.created_at||l.timestamp, l.type, l.entity_id||l.entityId, l.description, l.status, l.detail].map(v=>`"${(v||'').toString().replace(/"/g,'""')}"`).join(',')
-            );
+            const headers = 'Timestamp,Type,Module,Actor,EntityID,Description,Status,Severity,IPAddress,RiskScore,SessionID';
+            const rows = filtered.map(l => {
+                const jd = l.json_data || l.json || {};
+                return [
+                    l.created_at||l.timestamp, l.type,
+                    l.module||jd.module||l.type,
+                    l.actor||jd.actor||jd.user||'System',
+                    l.entity_id||l.entityId,
+                    l.description, l.status,
+                    l.severity||jd.severity||'low',
+                    l.ip_address||jd.ip_address||'',
+                    l.risk_score||jd.risk_score||0,
+                    l.session_id||jd.session_id||''
+                ].map(v => `"${(v||'').toString().replace(/"/g,'""')}"`).join(',');
+            });
             const blob = new Blob([[headers].concat(rows).join('\n')], { type: 'text/csv' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -584,14 +855,16 @@
         });
 
         /* ── Expand/Collapse ── */
-        function toggleDetails(element) {
-            const details = element.querySelector('.log-details');
-            const isOpen = element.classList.contains('open');
+        function toggleDetails(el) {
+            el.stopPropagation && el.stopPropagation();
+            const details = el.querySelector ? el.querySelector('.log-details') : null;
+            if (!details) return;
+            const isOpen = el.classList.contains('open');
             if (isOpen) {
-                element.classList.remove('open');
+                el.classList.remove('open');
                 gsap.to(details, { height: 0, duration: 0.3, ease: 'power2.out' });
             } else {
-                element.classList.add('open');
+                el.classList.add('open');
                 gsap.set(details, { height: 'auto' });
                 gsap.from(details, { height: 0, duration: 0.3, ease: 'power2.out' });
             }
@@ -602,9 +875,7 @@
             isLive = !isLive;
             btn.classList.toggle('active');
             if (isLive) {
-                liveInterval = setInterval(async () => {
-                    await loadLogs();
-                }, 5000);
+                liveInterval = setInterval(loadLogs, 5000);
             } else {
                 clearInterval(liveInterval);
             }

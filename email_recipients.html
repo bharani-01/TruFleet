@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Email Recipients</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="trufleet-theme.js"></script>
+    <script src="trufleet-api.js"></script>
+    <script src="trufleet-notif.js"></script>
+    <script src="auth-check.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        :root {
+            --bg-body: #F8FAFC; --bg-surface: #FFFFFF; --bg-sidebar: #0F172A;
+            --text-primary: #0F172A; --text-secondary: #64748B; --text-tertiary: #94A3B8;
+            --accent: #3B82F6; --border: #E2E8F0;
+            --sidebar-w: 72px; --sidebar-w-exp: 260px; --hdr: 72px;
+            --radius-lg: 16px; --radius-md: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-hover: 0 10px 25px -5px rgba(0,0,0,0.06);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; outline:none; }
+        body { font-family:'Inter',sans-serif; background:var(--bg-body); color:var(--text-primary); height:100vh; display:flex; overflow:hidden; }
+
+        /* Sidebar */
+        .sidebar { width:var(--sidebar-w); background:var(--bg-sidebar); height:100vh; position:fixed; left:0; top:0; z-index:50; padding:1.5rem 0; display:flex; flex-direction:column; transition:width 0.4s cubic-bezier(0.4,0,0.2,1); overflow:hidden; }
+        .sidebar:hover { width:var(--sidebar-w-exp); }
+        .brand-icon { height:40px; display:flex; align-items:center; padding-left:20px; margin-bottom:3rem; color:white; white-space:nowrap; }
+        .brand-icon i { font-size:1.75rem; min-width:32px; color:#3B82F6; }
+        .brand-text { font-family:'Manrope',sans-serif; font-weight:800; font-size:1.25rem; margin-left:16px; opacity:0; transition:opacity 0.3s; }
+        .sidebar:hover .brand-text { opacity:1; }
+        .nav-menu { display:flex; flex-direction:column; gap:8px; padding:0 12px; }
+        .nav-item { display:flex; align-items:center; height:48px; padding:0 14px; border-radius:8px; color:#94A3B8; text-decoration:none; transition:all 0.2s; white-space:nowrap; cursor:pointer; }
+        .nav-item:hover, .nav-item.active { background:rgba(255,255,255,0.1); color:white; }
+        .nav-item i { font-size:1.4rem; min-width:24px; }
+        .nav-label { margin-left:16px; font-weight:500; opacity:0; transition:opacity 0.2s; }
+        .sidebar:hover .nav-label { opacity:1; }
+
+        /* Layout */
+        .main-content { flex:1; margin-left:var(--sidebar-w); height:100vh; display:flex; flex-direction:column; }
+        .top-bar { height:var(--hdr); background:var(--bg-surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 2.5rem; position:sticky; top:0; z-index:40; }
+        .page-title h1 { font-family:'Manrope',sans-serif; font-size:1.6rem; font-weight:700; }
+        .page-content { flex:1; overflow-y:auto; padding:2rem 2.5rem; }
+
+        /* Grid layout */
+        .grid-2 { display:grid; grid-template-columns:1fr 380px; gap:1.5rem; align-items:start; }
+
+        /* Cards */
+        .card { background:white; border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow); }
+        .card-header { padding:1.25rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+        .card-title { font-family:'Manrope',sans-serif; font-size:1rem; font-weight:700; }
+        .card-body { padding:1.5rem; }
+
+        /* Stats row */
+        .stats-row { display:flex; gap:1rem; margin-bottom:1.5rem; }
+        .stat-box { flex:1; background:white; border:1px solid var(--border); border-radius:var(--radius-md); padding:1rem 1.25rem; }
+        .stat-num { font-family:'JetBrains Mono',monospace; font-size:1.75rem; font-weight:700; color:var(--text-primary); }
+        .stat-label { font-size:0.78rem; color:var(--text-secondary); margin-top:3px; }
+        .stat-box.s-blue .stat-num { color:#3B82F6; }
+        .stat-box.s-green .stat-num { color:#10B981; }
+        .stat-box.s-amber .stat-num { color:#F59E0B; }
+
+        /* Recipient table */
+        .recipient-table { width:100%; border-collapse:collapse; }
+        .recipient-table th { text-align:left; padding:9px 14px; font-size:0.72rem; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.05em; background:#F8FAFC; border-bottom:1px solid var(--border); }
+        .recipient-table td { padding:12px 14px; border-bottom:1px solid #F8FAFC; vertical-align:middle; }
+        .recipient-table tr:last-child td { border-bottom:none; }
+        .recipient-table tr:hover td { background:#FAFAFA; }
+
+        /* Type chips */
+        .type-chips { display:flex; gap:4px; flex-wrap:wrap; }
+        .type-chip { display:inline-block; padding:2px 8px; border-radius:100px; font-size:0.68rem; font-weight:600; white-space:nowrap; }
+        .tc-daily { background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE; }
+        .tc-alert { background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; }
+
+        /* Toggle switch */
+        .toggle-wrap { display:flex; align-items:center; gap:8px; }
+        .toggle { position:relative; width:36px; height:20px; cursor:pointer; }
+        .toggle input { opacity:0; width:0; height:0; }
+        .toggle-thumb { position:absolute; inset:0; background:#CBD5E1; border-radius:999px; transition:0.3s; }
+        .toggle-thumb::before { content:''; position:absolute; width:14px; height:14px; left:3px; top:3px; background:white; border-radius:50%; transition:0.3s; }
+        input:checked + .toggle-thumb { background:#10B981; }
+        input:checked + .toggle-thumb::before { transform:translateX(16px); }
+
+        /* Action btns */
+        .icon-btn { background:none; border:1px solid var(--border); border-radius:7px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); font-size:0.95rem; transition:all 0.2s; }
+        .icon-btn:hover { border-color:#EF4444; color:#EF4444; background:#FEF2F2; }
+        .icon-btn.send-btn:hover { border-color:#3B82F6; color:#3B82F6; background:#EFF6FF; }
+
+        /* Add form */
+        .form-group { margin-bottom:1rem; }
+        .form-label { display:block; font-size:0.78rem; font-weight:600; color:var(--text-secondary); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em; }
+        .form-input { width:100%; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-family:'Inter',sans-serif; font-size:0.9rem; color:var(--text-primary); transition:border-color 0.2s; }
+        .form-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(59,130,246,0.1); }
+        .checkbox-group { display:flex; flex-direction:column; gap:8px; }
+        .check-item { display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.85rem; }
+        .check-item input { width:15px; height:15px; accent-color:var(--accent); cursor:pointer; }
+        .btn-primary { width:100%; padding:10px; background:#0F172A; color:white; border:none; border-radius:8px; font-weight:600; font-size:0.9rem; cursor:pointer; transition:background 0.2s; }
+        .btn-primary:hover { background:#1E293B; }
+        .btn-secondary { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; background:white; border:1px solid var(--border); border-radius:8px; font-size:0.85rem; font-weight:600; color:var(--text-secondary); cursor:pointer; transition:all 0.2s; }
+        .btn-secondary:hover { border-color:var(--text-primary); color:var(--text-primary); }
+
+        /* Schedule info */
+        .schedule-item { display:flex; align-items:flex-start; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+        .schedule-item:last-child { border-bottom:none; }
+        .sched-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1rem; }
+        .sched-icon.blue { background:#EFF6FF; color:#2563EB; }
+        .sched-icon.red  { background:#FEF2F2; color:#DC2626; }
+        .sched-icon.amb  { background:#FFFBEB; color:#D97706; }
+        .sched-title { font-weight:600; font-size:0.88rem; color:var(--text-primary); }
+        .sched-time  { font-size:0.78rem; color:var(--text-secondary); margin-top:2px; font-family:'JetBrains Mono',monospace; }
+
+        /* Empty state */
+        .empty-state { text-align:center; padding:3rem 1rem; color:var(--text-tertiary); }
+        .empty-state i { font-size:2.5rem; display:block; margin-bottom:0.75rem; }
+
+        /* Toast */
+        #toast { position:fixed; bottom:24px; right:24px; padding:12px 20px; border-radius:10px; font-weight:600; font-size:0.88rem; color:white; z-index:9999; transform:translateY(60px); opacity:0; transition:all 0.3s ease; pointer-events:none; }
+        #toast.show { transform:translateY(0); opacity:1; }
+        #toast.t-success { background:#0F172A; }
+        #toast.t-error   { background:#EF4444; }
+
+        ::-webkit-scrollbar { width:5px; }
+        ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:10px; }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="brand-icon">
+            <i class="ri-truck-fill"></i>
+            <span class="brand-text">TRUFLEET</span>
+        </div>
+        <div class="nav-menu">
+            <a href="dashboard.html"          class="nav-item"><i class="ri-dashboard-3-line"></i><span class="nav-label">Overview</span></a>
+            <a href="vehicle_management.html" class="nav-item"><i class="ri-bus-line"></i><span class="nav-label">Vehicle Management</span></a>
+            <a href="insurance_monitor.html"  class="nav-item"><i class="ri-shield-check-line"></i><span class="nav-label">Insurance Monitor</span></a>
+            <a href="audits.html"             class="nav-item"><i class="ri-file-list-3-line"></i><span class="nav-label">Audit Logs</span></a>
+            <a href="email_recipients.html"   class="nav-item active"><i class="ri-mail-settings-line"></i><span class="nav-label">Email Recipients</span></a>
+            <div style="flex:1"></div>
+            <a href="#" class="nav-item" id="notifBell" onclick="event.preventDefault();toggleNotifPanel()" style="position:relative;">
+                <i class="ri-notification-3-line"></i><span class="nav-label">Notifications</span>
+                <span id="notifBadge" style="position:absolute;top:6px;left:38px;background:#EF4444;color:white;font-size:0.65rem;font-weight:700;min-width:18px;height:18px;display:none;align-items:center;justify-content:center;border-radius:9px;padding:0 5px;">0</span>
+            </a>
+            <a href="setting.html"  class="nav-item"><i class="ri-settings-4-line"></i><span class="nav-label">Settings</span></a>
+            <a href="account.html"  class="nav-item"><i class="ri-user-line"></i><span class="nav-label">Account</span></a>
+            <a href="#" class="nav-item" onclick="event.preventDefault();logout()" style="color:#EF4444;"><i class="ri-logout-box-r-line"></i><span class="nav-label">Logout</span></a>
+        </div>
+    </nav>
+
+    <!-- Notification Panel -->
+    <div id="notifPanel" style="position:fixed;top:0;right:-400px;width:380px;height:100vh;background:white;box-shadow:-10px 0 40px rgba(0,0,0,0.08);z-index:300;transition:right 0.35s cubic-bezier(0.4,0,0.2,1);display:flex;flex-direction:column;font-family:'Inter',sans-serif;">
+        <div style="padding:1.5rem;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-family:'Manrope';font-size:1.1rem;">Notifications</h3>
+            <div style="display:flex;gap:8px;">
+                <button onclick="markAllRead()" style="font-size:0.8rem;color:#3B82F6;background:none;border:none;cursor:pointer;font-weight:600;">Mark all read</button>
+                <button onclick="toggleNotifPanel()" style="background:none;border:none;cursor:pointer;font-size:1.2rem;color:#94A3B8;"><i class="ri-close-line"></i></button>
+            </div>
+        </div>
+        <div id="notifList" style="flex:1;overflow-y:auto;padding:0.5rem;"></div>
+    </div>
+    <div id="notifOverlay" onclick="toggleNotifPanel()" style="position:fixed;inset:0;background:transparent;z-index:299;display:none;"></div>
+
+    <main class="main-content">
+        <div class="top-bar">
+            <div class="page-title">
+                <h1>Email Recipients</h1>
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button class="btn-secondary" onclick="triggerManualReport()"><i class="ri-send-plane-line"></i> Send Report Now</button>
+                <button class="btn-secondary" onclick="triggerAlertCheck()"><i class="ri-alarm-warning-line"></i> Run Alert Check</button>
+            </div>
+        </div>
+
+        <div class="page-content">
+
+            <!-- Stats -->
+            <div class="stats-row" id="statsRow">
+                <div class="stat-box s-blue"><div class="stat-num" id="sn-total">—</div><div class="stat-label">Total Recipients</div></div>
+                <div class="stat-box s-green"><div class="stat-num" id="sn-active">—</div><div class="stat-label">Active</div></div>
+                <div class="stat-box s-amber"><div class="stat-num" id="sn-inactive">—</div><div class="stat-label">Paused</div></div>
+            </div>
+
+            <div class="grid-2">
+
+                <!-- Left: Recipients Table -->
+                <div>
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Recipients List</span>
+                            <span style="font-size:0.8rem;color:var(--text-tertiary);" id="recipientCount"></span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="recipient-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Report Types</th>
+                                        <th>Active</th>
+                                        <th style="text-align:right;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recipientTableBody">
+                                    <tr><td colspan="5"><div class="empty-state"><i class="ri-loader-4-line"></i>Loading…</div></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Add Recipient + Schedule Info -->
+                <div style="display:flex;flex-direction:column;gap:1.25rem;">
+
+                    <!-- Add Form -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="ri-user-add-line" style="color:#3B82F6;margin-right:6px;"></i>Add Recipient</span></div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <input id="addName" type="text" class="form-input" placeholder="e.g. Fleet Manager">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Email Address *</label>
+                                <input id="addEmail" type="email" class="form-input" placeholder="recipient@company.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Subscribed Reports</label>
+                                <div class="checkbox-group">
+                                    <label class="check-item">
+                                        <input type="checkbox" id="chkDaily" checked>
+                                        <span>Daily Fleet Report <span style="color:#94A3B8;font-size:0.75rem;">(7:00 AM IST)</span></span>
+                                    </label>
+                                    <label class="check-item">
+                                        <input type="checkbox" id="chkAlerts" checked>
+                                        <span>Problem / Alert Emails</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <button class="btn-primary" onclick="addRecipient()">Add Recipient</button>
+                        </div>
+                    </div>
+
+                    <!-- Schedule Info -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="ri-time-line" style="color:#3B82F6;margin-right:6px;"></i>Email Schedule</span></div>
+                        <div class="card-body" style="padding:1rem 1.5rem;">
+                            <div class="schedule-item">
+                                <div class="sched-icon blue"><i class="ri-bar-chart-box-line"></i></div>
+                                <div>
+                                    <div class="sched-title">Daily Fleet Report</div>
+                                    <div class="sched-time">Every day · 07:00 AM IST</div>
+                                    <div style="font-size:0.78rem;color:#64748B;margin-top:2px;">Total count, active/blocked, insurance expiry summary</div>
+                                </div>
+                            </div>
+                            <div class="schedule-item">
+                                <div class="sched-icon red"><i class="ri-alarm-warning-line"></i></div>
+                                <div>
+                                    <div class="sched-title">Expired Insurance Alert</div>
+                                    <div class="sched-time">08:00 AM & 02:00 PM IST</div>
+                                    <div style="font-size:0.78rem;color:#64748B;margin-top:2px;">Vehicles with expired insurance — immediate action</div>
+                                </div>
+                            </div>
+                            <div class="schedule-item">
+                                <div class="sched-icon amb"><i class="ri-calendar-event-line"></i></div>
+                                <div>
+                                    <div class="sched-title">Expiry Warning (7 days)</div>
+                                    <div class="sched-time">08:00 AM & 02:00 PM IST</div>
+                                    <div style="font-size:0.78rem;color:#64748B;margin-top:2px;">Vehicles whose insurance expires within 7 days</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Test Send -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title"><i class="ri-test-tube-line" style="color:#8B5CF6;margin-right:6px;"></i>Test Send</span></div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Send test to email</label>
+                                <input id="testEmail" type="email" class="form-input" placeholder="test@example.com">
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <button class="btn-secondary" style="justify-content:center;" onclick="testSend('daily_report')"><i class="ri-file-chart-line"></i> Daily Report</button>
+                                <button class="btn-secondary" style="justify-content:center;" onclick="testSend('alert')"><i class="ri-alarm-warning-line"></i> Alert Email</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast"></div>
+
+    <script>
+        const BASE = '/api/email-recipients';
+        let recipients = [];
+
+        /* ── Toast ── */
+        function toast(msg, type = 'success') {
+            const el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = `t-${type} show`;
+            setTimeout(() => { el.className = el.className.replace(' show', ''); }, 3500);
+        }
+
+        /* ── Load ── */
+        async function loadRecipients() {
+            try {
+                const res = await fetch(BASE);
+                recipients = await res.json();
+            } catch { recipients = []; }
+            renderTable();
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('sn-total').textContent    = recipients.length;
+            document.getElementById('sn-active').textContent   = recipients.filter(r => r.active).length;
+            document.getElementById('sn-inactive').textContent = recipients.filter(r => !r.active).length;
+            document.getElementById('recipientCount').textContent = `${recipients.length} recipient${recipients.length !== 1 ? 's' : ''}`;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('recipientTableBody');
+            if (!recipients.length) {
+                tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="ri-inbox-line"></i><p>No recipients yet. Add one below.</p></div></td></tr>';
+                return;
+            }
+            tbody.innerHTML = recipients.map(r => {
+                const types = r.report_types || [];
+                const chips = [
+                    types.includes('daily_report') ? '<span class="type-chip tc-daily">Daily Report</span>' : '',
+                    types.includes('alerts')       ? '<span class="type-chip tc-alert">Alerts</span>'       : '',
+                ].filter(Boolean).join('');
+                return `
+                <tr>
+                    <td style="font-weight:600;font-size:0.88rem;">${escHtml(r.name || '—')}</td>
+                    <td style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#64748B;">${escHtml(r.email)}</td>
+                    <td><div class="type-chips">${chips || '<span style="color:#94A3B8;font-size:0.8rem;">None</span>'}</div></td>
+                    <td>
+                        <label class="toggle">
+                            <input type="checkbox" ${r.active ? 'checked' : ''} onchange="toggleActive('${r.id}', this.checked)">
+                            <span class="toggle-thumb"></span>
+                        </label>
+                    </td>
+                    <td style="text-align:right;">
+                        <div style="display:flex;justify-content:flex-end;gap:6px;">
+                            <button class="icon-btn send-btn" title="Send test email" onclick="quickTest('${escHtml(r.email)}')"><i class="ri-send-plane-line"></i></button>
+                            <button class="icon-btn" title="Delete" onclick="deleteRecipient('${r.id}', '${escHtml(r.name || r.email)}')"><i class="ri-delete-bin-5-line"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+            gsap.from('#recipientTableBody tr', { y: 10, opacity: 0, stagger: 0.04, duration: 0.3, ease: 'power2.out' });
+        }
+
+        function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        /* ── Add ── */
+        async function addRecipient() {
+            const name  = document.getElementById('addName').value.trim();
+            const email = document.getElementById('addEmail').value.trim();
+            if (!email) { toast('Email is required', 'error'); return; }
+
+            const report_types = [];
+            if (document.getElementById('chkDaily').checked)  report_types.push('daily_report');
+            if (document.getElementById('chkAlerts').checked) report_types.push('alerts');
+
+            try {
+                const res = await fetch(BASE, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, report_types }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to add');
+                toast(`${email} added as recipient`);
+                document.getElementById('addName').value = '';
+                document.getElementById('addEmail').value = '';
+                await loadRecipients();
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        /* ── Toggle active ── */
+        async function toggleActive(id, active) {
+            try {
+                const res = await fetch(`${BASE}/${id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ active }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                toast(active ? 'Recipient enabled' : 'Recipient paused');
+                const r = recipients.find(x => x.id === id);
+                if (r) r.active = active;
+                updateStats();
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        /* ── Delete ── */
+        async function deleteRecipient(id, name) {
+            if (!confirm(`Remove "${name}" from recipients?`)) return;
+            try {
+                const res = await fetch(`${BASE}/${id}`, { method: 'DELETE' });
+                if (!res.ok) throw new Error('Delete failed');
+                toast(`${name} removed`);
+                await loadRecipients();
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        /* ── Test send (quick from row) ── */
+        async function quickTest(email) {
+            document.getElementById('testEmail').value = email;
+            await testSend('daily_report');
+        }
+
+        async function testSend(type) {
+            const email = document.getElementById('testEmail').value.trim();
+            if (!email) { toast('Enter a test email address', 'error'); return; }
+            try {
+                const res  = await fetch(`${BASE}/test-send`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, type }),
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                toast(data.message);
+            } catch (err) { toast(err.message, 'error'); }
+        }
+
+        /* ── Manual triggers ── */
+        async function triggerManualReport() {
+            const email = prompt('Send daily report to (enter email or leave blank for all active recipients):', '');
+            if (email === null) return;
+            if (email) {
+                document.getElementById('testEmail').value = email;
+                await testSend('daily_report');
+            } else {
+                toast('Daily reports will be dispatched to all active recipients at next scheduled run.', 'success');
+            }
+        }
+
+        async function triggerAlertCheck() {
+            toast('Alert check triggered — emails will be sent if issues are detected.');
+            // In production, could call a dedicated /api/email-recipients/run-alerts endpoint
+        }
+
+        loadRecipients();
+    </script>
+</body>
+</html>

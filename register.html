@@ -51,19 +51,21 @@
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow-y: auto;
+            padding: 1.5rem 0;
             background-image: radial-gradient(circle at 100% 0%, #E2E8F0 0%, transparent 25%), 
                               radial-gradient(circle at 0% 100%, #E2E8F0 0%, transparent 25%);
         }
 
         /* The Monolith Container */
         .auth-container {
-            width: 1000px;
-            height: 650px;
+            max-width: 1000px;
+            width: 95vw;
+            min-height: 620px;
             background: var(--surface-color);
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-soft);
@@ -157,6 +159,8 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            overflow-y: auto;
+            min-height: 0;
         }
 
         /* Role Selector (The "Something Different") */
@@ -278,15 +282,15 @@
 
         /* The "Company ID" field that only appears for Admins */
         .conditional-field {
-            height: 0;
+            max-height: 0;
             overflow: hidden;
             opacity: 0;
-            transition: all 0.4s var(--ease-elastic);
+            transition: max-height 0.4s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
             margin-bottom: 0;
         }
 
         .conditional-field.visible {
-            height: auto;
+            max-height: 120px;
             opacity: 1;
             margin-bottom: 1.5rem;
         }
@@ -407,10 +411,55 @@
         }
 
         /* Responsive */
+        @media (max-width: 1050px) {
+            .auth-container { grid-template-columns: 0.7fr 1.3fr; }
+        }
+
         @media (max-width: 900px) {
-            .auth-container { grid-template-columns: 1fr; height: auto; max-width: 500px; }
+            .auth-container { grid-template-columns: 1fr; min-height: unset; }
             .visual-panel { display: none; }
-            .form-panel { padding: 2rem; }
+            .form-panel { padding: 2rem; max-height: none; }
+        }
+
+        @media (max-width: 480px) {
+            .form-panel { padding: 1.5rem; }
+            .role-selector { gap: 8px; }
+            .role-card { padding: 10px 8px; font-size: 0.8rem; }
+        }
+
+        /* ── OTP method switcher ── */
+        .method-tabs {
+            display: flex; background: #F1F5F9; border-radius: 10px; padding: 4px; gap: 4px;
+            margin-bottom: 1.25rem;
+        }
+        .method-tab {
+            flex: 1; padding: 8px 6px; border-radius: 7px; border: none; background: none;
+            font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 600; color: #64748B;
+            cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        .method-tab.active { background: white; color: #0F172A; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+        /* ── OTP input boxes ── */
+        .otp-boxes {
+            display: flex; gap: 8px; justify-content: center; margin: 1rem 0;
+        }
+        .otp-box {
+            width: 46px; height: 54px; border: 2px solid #E2E8F0; border-radius: 10px;
+            font-size: 1.4rem; font-weight: 700; text-align: center; font-family: 'JetBrains Mono', monospace;
+            color: #0F172A; transition: border-color 0.2s; background: #F8FAFC;
+        }
+        .otp-box:focus { border-color: #3B82F6; background: white; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+        /* ── OTP countdown ── */
+        .otp-timer { font-size: 0.8rem; color: #94A3B8; text-align: center; margin-top: 4px; }
+        .otp-timer a { color: #3B82F6; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .otp-timer a:hover { text-decoration: underline; }
+
+        /* ── Sent confirmation ── */
+        .otp-sent-badge {
+            display: flex; align-items: center; gap: 8px; background: #ECFDF5;
+            border: 1px solid #A7F3D0; border-radius: 8px; padding: 10px 14px; margin-bottom: 1rem;
+            font-size: 0.82rem; font-weight: 500; color: #059669;
         }
     </style>
 </head>
@@ -466,6 +515,12 @@
                 <button class="toggle-btn" id="btnRegister" onclick="setMode('register')">Request Access</button>
             </div>
 
+            <!-- Auth Method Tabs -->
+            <div class="method-tabs" id="methodTabs">
+                <button class="method-tab active" id="tabPassword" onclick="setMethod('password')"><i class="ri-lock-line"></i> Password</button>
+                <button class="method-tab" id="tabOtp" onclick="setMethod('otp')"><i class="ri-mail-send-line"></i> Email OTP</button>
+            </div>
+
             <!-- Demo Credentials Info -->
             <div class="demo-box" id="demoBox">
                 <i class="ri-information-line"></i>
@@ -519,11 +574,49 @@
                 
                 <a class="forgot-pass" id="forgotLink">Forgot password?</a>
                 
-                <button class="btn-submit" style="margin-top: 1.5rem;" onclick="handleLogin()">
+                <button class="btn-submit" style="margin-top: 1.5rem;" id="mainSubmitBtn" onclick="handleLogin()">
                     <span id="submitText">Enter Dashboard</span>
                     <i class="ri-arrow-right-line"></i>
                 </button>
             </form>
+
+            <!-- OTP Panel (shown when method = otp) -->
+            <div id="otpPanel" style="display:none;">
+
+                <!-- Step 1: Enter email + send OTP -->
+                <div id="otpStep1">
+                    <div class="input-group" style="margin-bottom:1rem;">
+                        <input id="otpEmailInput" type="email" class="input-field" placeholder="Enter your work email">
+                        <i class="ri-mail-line input-icon"></i>
+                    </div>
+                    <button class="btn-submit" onclick="handleSendOtp()">
+                        <span id="sendOtpText">Send Code</span>
+                        <i class="ri-send-plane-line"></i>
+                    </button>
+                </div>
+
+                <!-- Step 2: Enter OTP (hidden until code sent) -->
+                <div id="otpStep2" style="display:none;">
+                    <div class="otp-sent-badge">
+                        <i class="ri-checkbox-circle-line"></i>
+                        <span>Code sent to <strong id="otpSentTo"></strong></span>
+                    </div>
+                    <div class="otp-boxes">
+                        <input class="otp-box" id="o1" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,'o2')" onkeydown="otpBackspace(event,this,null)">
+                        <input class="otp-box" id="o2" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,'o3')" onkeydown="otpBackspace(event,this,'o1')">
+                        <input class="otp-box" id="o3" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,'o4')" onkeydown="otpBackspace(event,this,'o2')">
+                        <input class="otp-box" id="o4" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,'o5')" onkeydown="otpBackspace(event,this,'o3')">
+                        <input class="otp-box" id="o5" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,'o6')" onkeydown="otpBackspace(event,this,'o4')">
+                        <input class="otp-box" id="o6" maxlength="1" type="text" inputmode="numeric" oninput="otpInput(this,null)"  onkeydown="otpBackspace(event,this,'o5')">
+                    </div>
+                    <div class="otp-timer" id="otpTimer">—</div>
+                    <button class="btn-submit" style="margin-top:1rem;" onclick="handleVerifyOtp()">
+                        <span id="verifyOtpText">Verify & Sign In</span>
+                        <i class="ri-shield-check-line"></i>
+                    </button>
+                    <button onclick="resetOtpFlow()" style="width:100%;margin-top:8px;background:none;border:none;color:#64748B;font-size:0.85rem;cursor:pointer;padding:8px;">← Use a different email</button>
+                </div>
+            </div>
 
             <div class="divider"><span>Or continue with</span></div>
 
@@ -543,8 +636,11 @@
         }
 
         // State Management
-        let currentRole = 'admin';
-        let currentMode = 'login'; // 'login' or 'register'
+        let currentRole   = 'admin';
+        let currentMode   = 'login';  // 'login' | 'register'
+        let currentMethod = 'password'; // 'password' | 'otp'
+        let otpEmail      = '';
+        let otpCountdown  = null;
 
         // DOM Elements
         const toggleSlider = document.getElementById('toggleSlider');
@@ -565,6 +661,25 @@
         const submitText   = document.getElementById('submitText');
         const forgotLink   = document.getElementById('forgotLink');
         const demoBox      = document.getElementById('demoBox');
+
+        /* ── Auth method switch ── */
+        function setMethod(method) {
+            currentMethod = method;
+            document.getElementById('tabPassword').classList.toggle('active', method === 'password');
+            document.getElementById('tabOtp').classList.toggle('active', method === 'otp');
+
+            const form     = document.getElementById('authForm');
+            const otpPanel = document.getElementById('otpPanel');
+            if (method === 'password') {
+                form.style.display     = '';
+                otpPanel.style.display = 'none';
+            } else {
+                form.style.display     = 'none';
+                otpPanel.style.display = '';
+                // OTP method only shows for Login mode
+                if (currentMode === 'register') setMode('login');
+            }
+        }
 
         function setMode(mode) {
             currentMode = mode;
@@ -588,6 +703,8 @@
                 forgotLink.style.display = 'none';
                 demoBox.style.display = 'none';
                 if (currentRole === 'admin') fieldCompany.classList.add('visible');
+                // OTP only for login — switch back to password if in register
+                if (currentMethod === 'otp') setMethod('password');
             }
         }
 
@@ -613,7 +730,8 @@
                     bgAdmin.style.opacity = 0;
                     bgDriver.style.opacity = 1;
                     fieldCompany.classList.remove('visible');
-                    fieldLicense.classList.remove('visible');
+                    if (currentMode === 'register') fieldLicense.classList.add('visible');
+                    else fieldLicense.classList.remove('visible');
                 } else {
                     visualHeading.innerText = "Dispatch Hub";
                     visualDesc.innerText = "Validate outgoing shipments and generate cryptographic authorization keys.";
@@ -636,7 +754,7 @@
         }
 
         function setLoading(on) {
-            const btn = document.querySelector('.btn-submit');
+            const btn = document.getElementById('mainSubmitBtn');
             const txt = document.getElementById('submitText');
             if (on) {
                 btn.disabled = true;
@@ -724,6 +842,104 @@
                 console.error('Unexpected auth error:', err);
                 showFormError('An unexpected error occurred. Please try again.');
                 setLoading(false);
+            }
+        }
+
+        /* ─── OTP flow ──────────────────────────────────────── */
+
+        function otpInput(el, nextId) {
+            el.value = el.value.replace(/\D/g, '').slice(-1);
+            if (el.value && nextId) document.getElementById(nextId).focus();
+            // Auto-verify when all 6 filled
+            const code = ['o1','o2','o3','o4','o5','o6'].map(id => document.getElementById(id).value).join('');
+            if (code.length === 6) handleVerifyOtp();
+        }
+
+        function otpBackspace(e, el, prevId) {
+            if (e.key === 'Backspace' && !el.value && prevId) {
+                document.getElementById(prevId).focus();
+            }
+        }
+
+        function startOtpCountdown(seconds) {
+            clearInterval(otpCountdown);
+            const timer = document.getElementById('otpTimer');
+            let remaining = seconds;
+            function tick() {
+                if (remaining <= 0) {
+                    clearInterval(otpCountdown);
+                    timer.innerHTML = 'Code expired. <a onclick="resetOtpFlow()">← Send again</a>';
+                    return;
+                }
+                const m = Math.floor(remaining / 60);
+                const s = remaining % 60;
+                timer.innerHTML = `Code expires in ${m}:${s.toString().padStart(2,'0')} — <a onclick="resendOtp()">Resend</a>`;
+                remaining--;
+            }
+            tick();
+            otpCountdown = setInterval(tick, 1000);
+        }
+
+        async function handleSendOtp() {
+            const email = document.getElementById('otpEmailInput').value.trim();
+            if (!email) { showFormError('Please enter your email address.'); return; }
+
+            const btn = document.getElementById('sendOtpText');
+            btn.textContent = 'Sending…';
+            document.querySelector('#otpStep1 .btn-submit').disabled = true;
+
+            try {
+                const result = await TruFleet.sendOtp(email);
+                if (!result.success) throw new Error(result.error || 'Failed to send OTP');
+                otpEmail = email;
+                document.getElementById('otpSentTo').textContent = email;
+                document.getElementById('otpStep1').style.display = 'none';
+                document.getElementById('otpStep2').style.display = '';
+                document.getElementById('o1').focus();
+                startOtpCountdown(600); // 10 min
+            } catch (err) {
+                showFormError(err.message || 'Could not send OTP. Check server connection.');
+                btn.textContent = 'Send Code';
+                document.querySelector('#otpStep1 .btn-submit').disabled = false;
+            }
+        }
+
+        async function resendOtp() {
+            resetOtpFlow();
+            document.getElementById('otpEmailInput').value = otpEmail;
+            await handleSendOtp();
+        }
+
+        function resetOtpFlow() {
+            clearInterval(otpCountdown);
+            document.getElementById('otpStep1').style.display = '';
+            document.getElementById('otpStep2').style.display = 'none';
+            document.getElementById('sendOtpText').textContent = 'Send Code';
+            document.querySelector('#otpStep1 .btn-submit').disabled = false;
+            ['o1','o2','o3','o4','o5','o6'].forEach(id => { document.getElementById(id).value = ''; });
+        }
+
+        async function handleVerifyOtp() {
+            const code = ['o1','o2','o3','o4','o5','o6'].map(id => document.getElementById(id).value).join('');
+            if (code.length < 6) return;
+
+            const verifyBtn = document.getElementById('verifyOtpText');
+            verifyBtn.textContent = 'Verifying…';
+
+            try {
+                const result = await TruFleet.verifyOtp(otpEmail, code);
+                if (result.success) {
+                    clearInterval(otpCountdown);
+                    window.location.href = 'dashboard.html';
+                } else {
+                    throw new Error(result.error || 'Verification failed');
+                }
+            } catch (err) {
+                showFormError(err.message);
+                verifyBtn.textContent = 'Verify & Sign In';
+                // Clear boxes on error
+                ['o1','o2','o3','o4','o5','o6'].forEach(id => { document.getElementById(id).value = ''; });
+                document.getElementById('o1').focus();
             }
         }
     </script>

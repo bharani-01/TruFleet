@@ -280,6 +280,29 @@
     return post('/notifications', notification);
   }
 
+  /* ── OTP Auth ──────────────────────────────────────────── */
+
+  /**
+   * Request an OTP to be sent to the given email.
+   * @param {string} email
+   * @returns {Promise<{success:boolean, message:string}>}
+   */
+  async function sendOtp(email) {
+    return post('/auth/otp/send', { email });
+  }
+
+  /**
+   * Verify the OTP and log in. Sets current user on success.
+   * @param {string} email
+   * @param {string} otp
+   * @returns {Promise<{success:boolean, user:Object}>}
+   */
+  async function verifyOtp(email, otp) {
+    const result = await post('/auth/otp/verify', { email, otp });
+    if (result.user) setCurrentUser(result.user);
+    return result;
+  }
+
   /* ── Expose globally ───────────────────────────────────── */
   window.TruFleet = {
     // Data — Vehicles
@@ -307,6 +330,8 @@
     // Auth
     login,
     register,
+    sendOtp,
+    verifyOtp,
     getCurrentUser,
     setCurrentUser,
     clearCurrentUser,
