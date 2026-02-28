@@ -10,11 +10,12 @@ const cors       = require('cors');
 const bodyParser = require('body-parser');
 const path       = require('path');
 
-const vehiclesRouter      = require('./routes/vehicles');
-const logsRouter          = require('./routes/logs');
-const authRouter          = require('./routes/auth');
-const analyticsRouter     = require('./routes/analytics');
-const notificationsRouter = require('./routes/notifications');
+const vehiclesRouter        = require('./routes/vehicles');
+const logsRouter            = require('./routes/logs');
+const authRouter            = require('./routes/auth');
+const analyticsRouter       = require('./routes/analytics');
+const notificationsRouter   = require('./routes/notifications');
+const fleetVehiclesRouter   = require('./routes/fleet_vehicles');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -26,12 +27,26 @@ app.use(bodyParser.json());
 /* ── Static files — serve HTML pages from project root ── */
 app.use(express.static(path.join(__dirname, '..')));
 
+/* ── Block direct URL access to private server-side views ── */
+app.use((req, res, next) => {
+  if (/^\/server\//i.test(req.path)) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  next();
+});
+
+/* ── Dedicated page route — fleet-register is accessible ONLY via this endpoint ── */
+app.get('/fleet-register', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'fleet_register.html'));
+});
+
 /* ── API Routes ── */
-app.use('/api/vehicles',      vehiclesRouter);
-app.use('/api/logs',          logsRouter);
-app.use('/api/auth',          authRouter);
-app.use('/api/analytics',     analyticsRouter);
-app.use('/api/notifications', notificationsRouter);
+app.use('/api/vehicles',       vehiclesRouter);
+app.use('/api/logs',           logsRouter);
+app.use('/api/auth',           authRouter);
+app.use('/api/analytics',      analyticsRouter);
+app.use('/api/notifications',  notificationsRouter);
+app.use('/api/fleet-vehicles', fleetVehiclesRouter);
 
 /* ── Health check ── */
 app.get('/api/health', (_req, res) => {

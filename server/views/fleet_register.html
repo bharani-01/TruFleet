@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet — Fleet Vehicle Registration</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg:           #F0F4F8;
+            --surface:      #FFFFFF;
+            --surface-alt:  #F8FAFC;
+            --border:       #E2E8F0;
+            --text:         #0F172A;
+            --text-muted:   #64748B;
+            --accent:       #1E40AF;
+            --accent-light: #DBEAFE;
+            --success:      #059669;
+            --success-bg:   #D1FAE5;
+            --danger:       #DC2626;
+            --danger-bg:    #FEE2E2;
+            --warn:         #D97706;
+            --warn-bg:      #FEF3C7;
+            --radius:       10px;
+            --radius-lg:    16px;
+            --shadow:       0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.04);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ─── Top Bar ─────────────────────────────────────────── */
+        .topbar {
+            background: var(--text);
+            color: white;
+            padding: 0 2rem;
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1rem;
+            letter-spacing: 0.5px;
+        }
+
+        .topbar-brand i { font-size: 1.3rem; color: #60A5FA; }
+
+        .topbar-badge {
+            background: rgba(96,165,250,.15);
+            border: 1px solid rgba(96,165,250,.3);
+            color: #93C5FD;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .topbar-stat {
+            text-align: right;
+            line-height: 1.3;
+        }
+
+        .topbar-stat span { font-size: 0.7rem; color: #94A3B8; display: block; }
+        .topbar-stat strong { font-size: 1rem; color: white; }
+
+        /* ─── Content ──────────────────────────────────────────── */
+        .page-content {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 1.75rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+
+        /* ─── Stats Row ─────────────────────────────────────────── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 1.25rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon.blue   { background: #EFF6FF; color: #1D4ED8; }
+        .stat-icon.green  { background: #ECFDF5; color: #059669; }
+        .stat-icon.amber  { background: #FFFBEB; color: #D97706; }
+        .stat-icon.slate  { background: #F1F5F9; color: #475569; }
+
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+        .stat-value { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+
+        /* ─── Main Grid ─────────────────────────────────────────── */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+
+        /* ─── Card ──────────────────────────────────────────────── */
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-header h2 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--accent); font-size: 1.1rem; }
+
+        .card-body { padding: 1.5rem; }
+
+        /* ─── Form ──────────────────────────────────────────────── */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-row.single { grid-template-columns: 1fr; }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 0;
+        }
+
+        .field label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+
+        .required-star { color: var(--danger); margin-left: 2px; }
+
+        .field input,
+        .field select,
+        .field textarea {
+            padding: 0.65rem 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background: var(--surface-alt);
+            transition: border-color 0.15s, box-shadow 0.15s;
+            outline: none;
+            width: 100%;
+        }
+
+        .field input:focus,
+        .field select:focus,
+        .field textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(30,64,175,.1);
+            background: white;
+        }
+
+        .field input.mono { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; letter-spacing: 0.5px; }
+
+        .field textarea { resize: vertical; min-height: 70px; }
+
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 1.25rem 0 0.75rem;
+        }
+
+        .section-divider span {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            white-space: nowrap;
+        }
+
+        .section-divider::before, .section-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .usage-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+
+        .usage-option {
+            display: none;
+        }
+
+        .usage-label {
+            padding: 0.65rem 0.5rem;
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            cursor: pointer;
+            background: var(--surface-alt);
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            border-right: 1px solid var(--border);
+        }
+
+        .usage-label:last-of-type { border-right: none; }
+
+        .usage-option:checked + .usage-label {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 0.8rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 1.5rem;
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .btn-submit:hover { background: #1E3A8A; }
+        .btn-submit:active { transform: scale(0.99); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* ─── Table Card ────────────────────────────────────────── */
+        .table-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            padding: 0.5rem 0.75rem 0.5rem 2.2rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.82rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-alt);
+            color: var(--text);
+            outline: none;
+            width: 220px;
+            transition: border-color 0.15s;
+        }
+
+        .search-box input:focus { border-color: var(--accent); background: white; }
+
+        .search-box i {
+            position: absolute;
+            left: 0.65rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .filter-select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 0.82rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-alt);
+            color: var(--text);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        thead th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: var(--surface-alt);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: #F8FAFF; }
+
+        td {
+            padding: 0.85rem 1rem;
+            vertical-align: middle;
+        }
+
+        .cell-reg {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .cell-vin {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.73rem;
+            color: var(--text-muted);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .badge.commercial { background: var(--accent-light); color: var(--accent); }
+        .badge.personal   { background: #F3E8FF; color: #6B21A8; }
+        .badge.active     { background: var(--success-bg); color: var(--success); }
+        .badge.inactive   { background: #F1F5F9; color: #64748B; }
+        .badge.suspended  { background: var(--danger-bg); color: var(--danger); }
+
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            transition: background 0.15s;
+        }
+
+        .btn-icon.delete { background: var(--danger-bg); color: var(--danger); }
+        .btn-icon.delete:hover { background: #FCA5A5; }
+        .btn-icon.edit { background: var(--accent-light); color: var(--accent); }
+        .btn-icon.edit:hover { background: #BFDBFE; }
+
+        .empty-state {
+            padding: 3rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; color: #CBD5E1; }
+        .empty-state p { font-size: 0.85rem; }
+
+        .table-footer {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* ─── Toast ─────────────────────────────────────────────── */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 999;
+        }
+
+        .toast {
+            padding: 0.85rem 1.25rem;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            min-width: 260px;
+            max-width: 380px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            animation: slideIn 0.25s ease;
+        }
+
+        .toast.success { background: var(--success-bg); color: #065F46; border-left: 4px solid var(--success); }
+        .toast.error   { background: var(--danger-bg);  color: #7F1D1D; border-left: 4px solid var(--danger); }
+        .toast.info    { background: var(--accent-light); color: #1E3A8A; border-left: 4px solid var(--accent); }
+
+        @keyframes slideIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+
+        /* ─── Loading overlay ───────────────────────────────────── */
+        .loading-row td {
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-right: 6px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── Responsive ────────────────────────────────────────── */
+        @media (max-width: 1100px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .page-content { padding: 1rem; }
+            .stats-row { grid-template-columns: 1fr 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .topbar { padding: 0 1rem; }
+            .topbar-right { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Top Bar ── -->
+<header class="topbar">
+    <div class="topbar-brand">
+        <i class="ri-truck-fill"></i>
+        TRUFLEET
+        <span class="topbar-badge">Fleet Registration</span>
+    </div>
+    <div class="topbar-right">
+        <div class="topbar-stat">
+            <span>Dashboard</span>
+            <strong id="statTotal">—</strong>
+        </div>
+        <div class="topbar-stat">
+            <span>Commercial</span>
+            <strong id="statComm">—</strong>
+        </div>
+        <div class="topbar-stat">
+            <span>Personal</span>
+            <strong id="statPers">—</strong>
+        </div>
+    </div>
+</header>
+
+<!-- ── Toast ── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ── Page ── -->
+<main class="page-content">
+    <div class="page-header">
+        <h1><i class="ri-car-line" style="color:var(--accent);vertical-align:middle;margin-right:8px;"></i>Vehicle Registration Portal</h1>
+        <p>Register new vehicles into the TruFleet platform. All entries are stored to the <code>fleet_vehicles</code> table.</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon blue"><i class="ri-car-fill"></i></div>
+            <div>
+                <div class="stat-label">Total Vehicles</div>
+                <div class="stat-value" id="s-total">—</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green"><i class="ri-building-4-line"></i></div>
+            <div>
+                <div class="stat-label">Commercial</div>
+                <div class="stat-value" id="s-comm">—</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon amber"><i class="ri-user-car-line"></i></div>
+            <div>
+                <div class="stat-label">Personal</div>
+                <div class="stat-value" id="s-pers">—</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon slate"><i class="ri-checkbox-circle-line"></i></div>
+            <div>
+                <div class="stat-label">Active</div>
+                <div class="stat-value" id="s-active">—</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+
+        <!-- ── Registration Form ── -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="ri-add-circle-line"></i> Register New Vehicle</h2>
+            </div>
+            <div class="card-body">
+                <form id="regForm" onsubmit="event.preventDefault(); submitForm();">
+
+                    <!-- Identity -->
+                    <div class="section-divider"><span>Identity</span></div>
+                    <div style="display:grid;gap:1rem;">
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Registration No.<span class="required-star">*</span></label>
+                                <input id="f-reg" type="text" class="mono" placeholder="MH12AB1234" autocomplete="off" required>
+                            </div>
+                            <div class="field">
+                                <label>VIN<span class="required-star">*</span></label>
+                                <input id="f-vin" type="text" class="mono" placeholder="1HGBH41JXMN109186" autocomplete="off" required>
+                            </div>
+                        </div>
+
+                        <!-- Usage Toggle -->
+                        <div class="field">
+                            <label>Vehicle Usage<span class="required-star">*</span></label>
+                            <div class="usage-toggle">
+                                <input class="usage-option" type="radio" name="usage" id="u-commercial" value="commercial" checked>
+                                <label class="usage-label" for="u-commercial"><i class="ri-building-4-line"></i> Commercial</label>
+                                <input class="usage-option" type="radio" name="usage" id="u-personal" value="personal">
+                                <label class="usage-label" for="u-personal"><i class="ri-user-car-line"></i> Personal</label>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label>Vehicle Type<span class="required-star">*</span></label>
+                            <select id="f-type" required>
+                                <option value="">— Select type —</option>
+                                <option value="Truck">Truck / HGV</option>
+                                <option value="Van">Van / LCV</option>
+                                <option value="Pickup">Pickup</option>
+                                <option value="Tanker">Tanker</option>
+                                <option value="Trailer">Trailer</option>
+                                <option value="Bus">Bus / Coach</option>
+                                <option value="Sedan">Sedan / Car</option>
+                                <option value="SUV">SUV / 4x4</option>
+                                <option value="Motorcycle">Motorcycle</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Owner -->
+                    <div class="section-divider"><span>Owner Details</span></div>
+                    <div style="display:grid;gap:1rem;">
+                        <div class="field">
+                            <label>Owner Name<span class="required-star">*</span></label>
+                            <input id="f-owner" type="text" placeholder="Full name or company" required>
+                        </div>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Contact No.<span class="required-star">*</span></label>
+                                <input id="f-contact" type="tel" placeholder="+91 98765 43210" required>
+                            </div>
+                            <div class="field">
+                                <label>Status</label>
+                                <select id="f-status">
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                    <option value="suspended">Suspended</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vehicle Details -->
+                    <div class="section-divider"><span>Vehicle Specs</span></div>
+                    <div style="display:grid;gap:1rem;">
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Make (Brand)</label>
+                                <input id="f-make" type="text" placeholder="Tata, Ashok Leyland…">
+                            </div>
+                            <div class="field">
+                                <label>Model</label>
+                                <input id="f-model" type="text" placeholder="Prima, Dost…">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Year</label>
+                                <input id="f-year" type="number" placeholder="2022" min="1990" max="2030">
+                            </div>
+                            <div class="field">
+                                <label>Color</label>
+                                <input id="f-color" type="text" placeholder="White, Blue…">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="field">
+                                <label>Fuel Type</label>
+                                <select id="f-fuel">
+                                    <option value="">— Select —</option>
+                                    <option value="Diesel">Diesel</option>
+                                    <option value="Petrol">Petrol</option>
+                                    <option value="CNG">CNG</option>
+                                    <option value="Electric">Electric</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                    <option value="LPG">LPG</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <label>Engine / CC</label>
+                                <input id="f-engine" type="text" placeholder="3800cc / 280HP">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label>Notes</label>
+                            <textarea id="f-notes" placeholder="Additional remarks…"></textarea>
+                        </div>
+                    </div>
+
+                    <button class="btn-submit" type="submit" id="submitBtn">
+                        <i class="ri-add-line"></i>
+                        <span id="submitBtnText">Register Vehicle</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ── Records Table ── -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="ri-database-2-line"></i> Registered Vehicles</h2>
+                <div class="table-controls">
+                    <div class="search-box">
+                        <i class="ri-search-line"></i>
+                        <input id="searchInput" type="text" placeholder="Search…" oninput="filterTable()">
+                    </div>
+                    <select class="filter-select" id="filterUsage" onchange="filterTable()">
+                        <option value="">All Usage</option>
+                        <option value="commercial">Commercial</option>
+                        <option value="personal">Personal</option>
+                    </select>
+                    <select class="filter-select" id="filterStatus" onchange="filterTable()">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="suspended">Suspended</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Reg. No.</th>
+                            <th>VIN</th>
+                            <th>Owner</th>
+                            <th>Contact</th>
+                            <th>Type</th>
+                            <th>Usage</th>
+                            <th>Make / Model</th>
+                            <th>Fuel</th>
+                            <th>Status</th>
+                            <th style="text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vehicleTableBody">
+                        <tr class="loading-row">
+                            <td colspan="10">
+                                <span class="spinner"></span> Loading vehicles…
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                <span id="tableCount">—</span>
+                <span style="color:#94A3B8;font-size:0.72rem;">fleet_vehicles · TruFleet</span>
+            </div>
+        </div>
+
+    </div><!-- /main-grid -->
+</main>
+
+<script>
+/* ════════════════════════════════════════════════════
+   TRUFLEET — Fleet Vehicle Registration Dashboard
+   Endpoint: /fleet-register  (server-controlled access)
+   API:      /api/fleet-vehicles
+════════════════════════════════════════════════════ */
+
+const API = '/api/fleet-vehicles';
+
+let allVehicles = [];
+
+/* ── Toast ── */
+function toast(msg, type = 'info', duration = 3500) {
+    const container = document.getElementById('toastContainer');
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    const icons = { success: 'ri-checkbox-circle-fill', error: 'ri-error-warning-fill', info: 'ri-information-fill' };
+    el.innerHTML = `<i class="${icons[type] || icons.info}"></i> ${msg}`;
+    container.appendChild(el);
+    setTimeout(() => { el.style.transition = 'opacity 0.3s'; el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, duration);
+}
+
+/* ── Load vehicles from API ── */
+async function loadVehicles() {
+    try {
+        const res  = await fetch(API);
+        const json = await res.json();
+        allVehicles = json.data || [];
+        renderTable(allVehicles);
+        updateStats(allVehicles);
+    } catch (err) {
+        console.error(err);
+        document.getElementById('vehicleTableBody').innerHTML = `
+            <tr><td colspan="10" style="text-align:center;padding:2rem;color:#DC2626;">
+                <i class="ri-wifi-off-line"></i> Failed to load data. Is the server running?
+            </td></tr>`;
+    }
+}
+
+/* ── Stats ── */
+function updateStats(data) {
+    const total  = data.length;
+    const comm   = data.filter(v => v.vehicle_usage === 'commercial').length;
+    const pers   = data.filter(v => v.vehicle_usage === 'personal').length;
+    const active = data.filter(v => v.status === 'active').length;
+
+    ['total','comm','pers','active'].forEach((k, i) => {
+        document.getElementById(`s-${k}`).textContent = [total, comm, pers, active][i];
+    });
+
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statComm').textContent  = comm;
+    document.getElementById('statPers').textContent  = pers;
+}
+
+/* ── Render Table ── */
+function renderTable(data) {
+    const tbody = document.getElementById('vehicleTableBody');
+    const count = document.getElementById('tableCount');
+
+    if (!data.length) {
+        tbody.innerHTML = `<tr><td colspan="10">
+            <div class="empty-state">
+                <i class="ri-car-line"></i>
+                <p>No vehicles found. Register the first one!</p>
+            </div>
+        </td></tr>`;
+        count.textContent = '0 records';
+        return;
+    }
+
+    count.textContent = `${data.length} record${data.length !== 1 ? 's' : ''}`;
+
+    tbody.innerHTML = data.map(v => `
+        <tr data-id="${v.id}">
+            <td><span class="cell-reg">${v.vehicle_number}</span></td>
+            <td><span class="cell-vin">${v.vin || '—'}</span></td>
+            <td style="font-weight:500;">${escHtml(v.owner_name)}</td>
+            <td>${escHtml(v.contact)}</td>
+            <td>${escHtml(v.vehicle_type)}</td>
+            <td><span class="badge ${v.vehicle_usage}">${v.vehicle_usage}</span></td>
+            <td>${v.make ? `<span style="font-weight:500;">${escHtml(v.make)}</span>${v.model ? ' / ' + escHtml(v.model) : ''}${v.year ? ' <small style="color:var(--text-muted);">('+v.year+')</small>' : ''}` : '—'}</td>
+            <td>${v.fuel_type || '—'}</td>
+            <td><span class="badge ${v.status}">${v.status}</span></td>
+            <td style="text-align:center;white-space:nowrap;">
+                <button class="btn-icon delete" title="Delete" onclick="deleteVehicle('${v.id}', '${v.vehicle_number}')">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+/* ── Filter ── */
+function filterTable() {
+    const q      = document.getElementById('searchInput').value.toLowerCase();
+    const usage  = document.getElementById('filterUsage').value;
+    const status = document.getElementById('filterStatus').value;
+
+    let filtered = allVehicles;
+
+    if (q) {
+        filtered = filtered.filter(v =>
+            (v.vehicle_number || '').toLowerCase().includes(q) ||
+            (v.vin            || '').toLowerCase().includes(q) ||
+            (v.owner_name     || '').toLowerCase().includes(q) ||
+            (v.contact        || '').toLowerCase().includes(q) ||
+            (v.make           || '').toLowerCase().includes(q) ||
+            (v.model          || '').toLowerCase().includes(q)
+        );
+    }
+
+    if (usage)  filtered = filtered.filter(v => v.vehicle_usage === usage);
+    if (status) filtered = filtered.filter(v => v.status        === status);
+
+    renderTable(filtered);
+    document.getElementById('tableCount').textContent = `${filtered.length} of ${allVehicles.length} record${allVehicles.length !== 1 ? 's' : ''}`;
+}
+
+/* ── Submit Form ── */
+async function submitForm() {
+    const btn  = document.getElementById('submitBtn');
+    const txt  = document.getElementById('submitBtnText');
+    const orig = txt.textContent;
+
+    btn.disabled = true;
+    txt.textContent = 'Registering…';
+
+    const usage = document.querySelector('input[name="usage"]:checked')?.value || 'commercial';
+
+    const payload = {
+        vehicle_number: document.getElementById('f-reg').value.trim(),
+        vin:            document.getElementById('f-vin').value.trim(),
+        owner_name:     document.getElementById('f-owner').value.trim(),
+        contact:        document.getElementById('f-contact').value.trim(),
+        vehicle_type:   document.getElementById('f-type').value,
+        vehicle_usage:  usage,
+        make:           document.getElementById('f-make').value.trim()    || undefined,
+        model:          document.getElementById('f-model').value.trim()   || undefined,
+        year:           document.getElementById('f-year').value           || undefined,
+        color:          document.getElementById('f-color').value.trim()   || undefined,
+        fuel_type:      document.getElementById('f-fuel').value           || undefined,
+        engine_cc:      document.getElementById('f-engine').value.trim()  || undefined,
+        status:         document.getElementById('f-status').value,
+        notes:          document.getElementById('f-notes').value.trim()   || undefined,
+    };
+
+    try {
+        const res  = await fetch(API, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+        });
+        const json = await res.json();
+
+        if (!res.ok || !json.success) {
+            toast(json.error || 'Registration failed.', 'error');
+        } else {
+            toast(`✓ Vehicle <strong>${json.data.vehicle_number}</strong> registered successfully!`, 'success');
+            document.getElementById('regForm').reset();
+            // Reset usage toggle back to commercial
+            document.getElementById('u-commercial').checked = true;
+            await loadVehicles();
+        }
+    } catch (err) {
+        console.error(err);
+        toast('Network error — is the server running?', 'error');
+    } finally {
+        btn.disabled = false;
+        txt.textContent = orig;
+    }
+}
+
+/* ── Delete ── */
+async function deleteVehicle(id, regNo) {
+    if (!confirm(`Delete vehicle ${regNo}?\n\nThis action cannot be undone.`)) return;
+
+    try {
+        const res  = await fetch(`${API}/${id}`, { method: 'DELETE' });
+        const json = await res.json();
+
+        if (!res.ok || !json.success) {
+            toast(json.error || 'Failed to delete.', 'error');
+        } else {
+            toast(`Vehicle ${regNo} removed.`, 'info');
+            await loadVehicles();
+        }
+    } catch (err) {
+        toast('Network error.', 'error');
+    }
+}
+
+/* ── Utility ── */
+function escHtml(str) {
+    if (!str) return '—';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
+/* ── Init ── */
+loadVehicles();
+</script>
+</body>
+</html>
