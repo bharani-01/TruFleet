@@ -38,6 +38,9 @@
     dispatch:           ['super_admin', 'admin', 'dispatcher'],
     identity:           ['super_admin', 'admin', 'fleet_manager', 'insurance_agent'],
     owner:              ['super_admin', 'admin', 'fleet_manager', 'owner'],
+    drivers:            ['super_admin', 'admin', 'fleet_manager', 'dispatcher'],
+    maintenance:        ['super_admin', 'admin', 'fleet_manager'],
+    documents:          ['super_admin', 'admin', 'fleet_manager', 'insurance_agent'],
     audits:             ['super_admin', 'admin'],
     email_recipients:   ['super_admin', 'admin'],
     home:               null,   // public, no guard
@@ -48,6 +51,8 @@
    * ─────────────────────────────────────────────────────────────────────── */
   const NAV_MODULES = {
     'vehicle_management.html': 'vehicle_management',
+    'drivers.html':            'drivers',
+    'maintenance.html':        'maintenance',
     'insurance_monitor.html':  'insurance_monitor',
     'dispatch.html':           'dispatch',
     'identity.html':           'identity',

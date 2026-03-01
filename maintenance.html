@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruFleet | Maintenance</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <script src="trufleet-theme.js"></script>
+    <script src="trufleet-api.js"></script>
+    <script src="trufleet-notif.js"></script>
+    <script src="auth-check.js"></script>
+    <script src="rbac.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg-body:#F8FAFC; --bg-surface:#FFFFFF; --bg-sidebar:#0F172A; --bg-muted:#F1F5F9;
+            --text-primary:#0F172A; --text-secondary:#64748B; --text-tertiary:#94A3B8;
+            --border:#E2E8F0; --border-mid:#CBD5E1;
+            --accent-blue:#3B82F6; --accent-green:#10B981; --accent-amber:#F59E0B; --accent-red:#EF4444;
+            --sidebar-w:72px; --sidebar-exp:260px; --header-h:70px;
+            --shadow-card:0 1px 3px 0 rgba(0,0,0,.07),0 1px 2px -1px rgba(0,0,0,.05);
+            --shadow-float:0 20px 25px -5px rgba(0,0,0,.06),0 10px 10px -5px rgba(0,0,0,.02);
+            --radius-lg:16px; --radius-md:12px; --radius-sm:8px;
+            --ease:cubic-bezier(0.4,0,0.2,1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; outline:none; }
+        body { font-family:'Inter',sans-serif; background:var(--bg-body); color:var(--text-primary); height:100vh; display:flex; overflow:hidden; }
+
+        .sidebar { width:var(--sidebar-w); background:var(--bg-sidebar); height:100vh; position:fixed; left:0; top:0; display:flex; flex-direction:column; transition:width .3s var(--ease); z-index:200; overflow:hidden; }
+        .sidebar:hover { width:var(--sidebar-exp); }
+        .brand-icon { padding:1.25rem 0; display:flex; align-items:center; justify-content:center; gap:.75rem; font-size:1.4rem; color:var(--accent-blue); min-height:var(--header-h); overflow:hidden; }
+        .brand-text { font-family:'Manrope',sans-serif; font-weight:800; font-size:1rem; color:white; white-space:nowrap; opacity:0; transition:opacity .2s var(--ease) .05s; }
+        .sidebar:hover .brand-text { opacity:1; }
+        .nav-menu { display:flex; flex-direction:column; flex:1; padding:.5rem 0; gap:2px; overflow-y:auto; overflow-x:hidden; }
+        .nav-item { display:flex; align-items:center; gap:1rem; padding:.875rem 1.35rem; color:#94A3B8; font-size:.875rem; font-weight:500; text-decoration:none; transition:all .2s var(--ease); white-space:nowrap; }
+        .nav-item:hover { background:rgba(255,255,255,.07); color:white; }
+        .nav-item.active { background:rgba(59,130,246,.15); color:var(--accent-blue); border-right:3px solid var(--accent-blue); }
+        .nav-item i { font-size:1.25rem; flex-shrink:0; }
+        .nav-label { opacity:0; transition:opacity .15s var(--ease); }
+        .sidebar:hover .nav-label { opacity:1; }
+
+        .main-wrapper { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; height:100vh; overflow-y:auto; }
+        header { height:var(--header-h); background:var(--bg-surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 2rem; position:sticky; top:0; z-index:100; box-shadow:var(--shadow-card); }
+        .header-title h1 { font-family:'Manrope',sans-serif; font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:10px; }
+        .header-title h1 i { color:var(--accent-blue); }
+        .header-title span { color:var(--text-secondary); font-size:.9rem; font-weight:400; }
+        .header-actions { display:flex; align-items:center; gap:1rem; }
+        .avatar { width:36px; height:36px; border-radius:50%; background:var(--bg-sidebar); color:white; display:flex; align-items:center; justify-content:center; font-size:.9rem; font-weight:600; }
+        .page-content { padding:2rem; max-width:1400px; margin:0 auto; width:100%; }
+
+        /* KPI */
+        .kpi-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:1rem; margin-bottom:1.75rem; }
+        .kpi-card { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:1.1rem 1.25rem; box-shadow:var(--shadow-card); }
+        .kpi-label { font-size:.72rem; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--text-tertiary); margin-bottom:.4rem; }
+        .kpi-value { font-family:'Manrope',sans-serif; font-size:1.75rem; font-weight:800; line-height:1; }
+        .kpi-value.blue  { color:var(--accent-blue); }
+        .kpi-value.green { color:var(--accent-green); }
+        .kpi-value.amber { color:var(--accent-amber); }
+        .kpi-value.red   { color:var(--accent-red); }
+
+        /* Toolbar */
+        .toolbar { display:flex; align-items:center; gap:.75rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+        .search-wrap { position:relative; }
+        .search-wrap i { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-tertiary); font-size:.9rem; pointer-events:none; }
+        .search-input { height:38px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0 12px 0 34px; color:var(--text-primary); font-size:.875rem; font-family:'Inter',sans-serif; width:260px; transition:border-color .2s; }
+        .search-input:focus { border-color:var(--accent-blue); box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+        .filter-btn { height:38px; padding:0 14px; background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-secondary); font-size:.8rem; font-weight:500; cursor:pointer; transition:all .15s; font-family:'Inter',sans-serif; }
+        .filter-btn:hover { background:var(--bg-muted); }
+        .filter-btn.active { background:var(--bg-sidebar); color:white; border-color:var(--bg-sidebar); }
+        .btn-primary { height:38px; padding:0 16px; background:var(--bg-sidebar); border:none; border-radius:100px; color:white; font-size:.875rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px; transition:all .2s; font-family:'Inter',sans-serif; box-shadow:0 4px 12px rgba(15,23,42,.15); }
+        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(15,23,42,.2); }
+        .btn-ghost { height:38px; padding:0 16px; background:transparent; border:1px solid var(--border); border-radius:100px; color:var(--text-secondary); font-size:.875rem; cursor:pointer; font-family:'Inter',sans-serif; }
+        .btn-ghost:hover { border-color:var(--border-mid); color:var(--text-primary); }
+
+        /* Table */
+        .card { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); overflow:hidden; box-shadow:var(--shadow-card); }
+        table { width:100%; border-collapse:collapse; font-size:.875rem; }
+        th { text-align:left; padding:10px 14px; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-tertiary); background:var(--bg-muted); border-bottom:1px solid var(--border); }
+        td { padding:11px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+        tr:last-child td { border-bottom:none; }
+        tr:hover td { background:var(--bg-muted); }
+        .mono { font-family:'JetBrains Mono',monospace; font-size:.82rem; }
+        .loading-row td { text-align:center; padding:2.5rem; color:var(--text-tertiary); }
+        .icon-btn { background:none; border:1px solid var(--border); border-radius:var(--radius-sm); width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-secondary); font-size:.9rem; margin-left:3px; }
+        .icon-btn:hover { border-color:var(--accent-blue); color:var(--accent-blue); }
+        .tag { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:20px; font-size:.72rem; font-weight:600; }
+        .tag.scheduled   { background:#DBEAFE; color:#1D4ED8; }
+        .tag.in_progress { background:#FEF3C7; color:#92400E; }
+        .tag.completed   { background:#D1FAE5; color:#065F46; }
+        .tag.cancelled   { background:#F1F5F9; color:#64748B; }
+        .tag.overdue     { background:#FEE2E2; color:#991B1B; }
+        .type-icon { display:inline-flex; align-items:center; gap:6px; }
+        .type-icon i { font-size:1rem; }
+
+        /* Modal */
+        .overlay { display:none; position:fixed; inset:0; background:rgba(15,23,42,.5); z-index:300; align-items:center; justify-content:center; }
+        .overlay.open { display:flex; }
+        .modal { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:2rem; width:600px; max-height:90vh; overflow-y:auto; box-shadow:0 25px 60px rgba(0,0,0,.15); }
+        .modal-title { font-family:'Manrope',sans-serif; font-weight:700; font-size:1.1rem; margin-bottom:1.5rem; display:flex; align-items:center; justify-content:space-between; }
+        .modal-close { background:none; border:none; color:var(--text-tertiary); cursor:pointer; font-size:1.25rem; }
+        .modal-close:hover { color:var(--text-primary); }
+        .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:.875rem; }
+        .form-group { display:flex; flex-direction:column; gap:.3rem; }
+        .form-group.full { grid-column:1/-1; }
+        .form-group label { font-size:.78rem; font-weight:600; color:var(--text-secondary); }
+        .form-group input, .form-group select, .form-group textarea { height:38px; background:var(--bg-muted); border:1px solid var(--border); border-radius:var(--radius-sm); padding:0 12px; color:var(--text-primary); font-size:.875rem; font-family:'Inter',sans-serif; transition:border-color .2s; }
+        .form-group textarea { height:72px; padding:9px 12px; resize:vertical; }
+        .form-group input:focus, .form-group select:focus { border-color:var(--accent-blue); background:white; box-shadow:0 0 0 3px rgba(59,130,246,.1); }
+        .modal-actions { display:flex; gap:.75rem; margin-top:1.5rem; justify-content:flex-end; }
+        .empty-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:3rem; color:var(--text-tertiary); text-align:center; }
+        .empty-placeholder i { font-size:2.5rem; opacity:.4; }
+
+        @media(max-width:1100px) { .kpi-strip { grid-template-columns:repeat(3,1fr); } }
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="brand-icon"><i class="ri-truck-fill"></i><span class="brand-text">TruFleet</span></div>
+    <div class="nav-menu" id="navMenu">
+        <a href="dashboard.html"          class="nav-item"><i class="ri-dashboard-line"></i><span class="nav-label">Dashboard</span></a>
+        <a href="vehicle_management.html" class="nav-item"><i class="ri-car-line"></i><span class="nav-label">Fleet Management</span></a>
+        <a href="drivers.html"            class="nav-item"><i class="ri-steering-2-line"></i><span class="nav-label">Drivers</span></a>
+        <a href="maintenance.html"        class="nav-item active"><i class="ri-tools-line"></i><span class="nav-label">Maintenance</span></a>
+        <a href="insurance_monitor.html"  class="nav-item"><i class="ri-shield-check-line"></i><span class="nav-label">Insurance</span></a>
+        <a href="dispatch.html"           class="nav-item"><i class="ri-traffic-light-line"></i><span class="nav-label">Dispatch Control</span></a>
+        <a href="identity.html"           class="nav-item"><i class="ri-fingerprint-line"></i><span class="nav-label">Identity</span></a>
+        <a href="owner.html"              class="nav-item"><i class="ri-truck-line"></i><span class="nav-label">Owner Portal</span></a>
+        <a href="audits.html"             class="nav-item"><i class="ri-file-list-3-line"></i><span class="nav-label">Audit Log</span></a>
+        <a href="email_recipients.html"   class="nav-item"><i class="ri-mail-settings-line"></i><span class="nav-label">Email Config</span></a>
+    </div>
+    <div style="padding:.5rem 0;">
+        <a href="#" class="nav-item" onclick="event.preventDefault();logout();" style="color:#EF4444;">
+            <i class="ri-logout-box-r-line"></i><span class="nav-label">Logout</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Maintenance Modal -->
+<div class="overlay" id="maintModal">
+    <div class="modal">
+        <div class="modal-title">
+            <span id="maintModalTitle">Add Maintenance Record</span>
+            <button class="modal-close" onclick="closeMaintModal()"><i class="ri-close-line"></i></button>
+        </div>
+        <form id="maintForm">
+            <div class="form-grid">
+                <div class="form-group full">
+                    <label>Vehicle Registration No. *</label>
+                    <input type="text" id="m_vehicle" placeholder="e.g. MH12DE1433" style="text-transform:uppercase;" required />
+                </div>
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select id="m_type" required>
+                        <option value="routine">Routine Service</option>
+                        <option value="repair">Repair</option>
+                        <option value="inspection">Inspection</option>
+                        <option value="breakdown">Breakdown</option>
+                        <option value="tyre">Tyre</option>
+                        <option value="battery">Battery</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select id="m_status">
+                        <option value="scheduled">Scheduled</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="form-group full">
+                    <label>Description *</label>
+                    <input type="text" id="m_desc" placeholder="e.g. Engine oil change + filter replacement" required />
+                </div>
+                <div class="form-group"><label>Service Date *</label><input type="date" id="m_service_date" required /></div>
+                <div class="form-group"><label>Next Service Date</label><input type="date" id="m_next_date" /></div>
+                <div class="form-group"><label>Current Odometer (km)</label><input type="number" id="m_km" placeholder="125000" min="0" /></div>
+                <div class="form-group"><label>Next Service (km)</label><input type="number" id="m_next_km" placeholder="130000" min="0" /></div>
+                <div class="form-group"><label>Vendor / Workshop Name</label><input type="text" id="m_vendor" placeholder="ABC Auto Service" /></div>
+                <div class="form-group"><label>Vendor Phone</label><input type="tel" id="m_vendor_phone" placeholder="+91 98765 43210" /></div>
+                <div class="form-group"><label>Cost (₹)</label><input type="number" id="m_cost" placeholder="5000" min="0" step="0.01" /></div>
+                <div class="form-group full"><label>Notes</label><textarea id="m_notes" placeholder="Additional notes…"></textarea></div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-ghost" onclick="closeMaintModal()">Cancel</button>
+                <button type="submit" class="btn-primary"><i class="ri-save-line"></i> Save Record</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="main-wrapper">
+    <header>
+        <div class="header-title">
+            <h1><i class="ri-tools-line"></i> Maintenance</h1>
+            <span>Service schedules, repair history &amp; cost tracking</span>
+        </div>
+        <div class="header-actions">
+            <div id="userProfile"><div class="avatar" id="userAvatar">CO</div></div>
+        </div>
+    </header>
+
+    <div class="page-content">
+        <div class="kpi-strip">
+            <div class="kpi-card"><div class="kpi-label">Scheduled</div>   <div class="kpi-value blue"  id="s-scheduled">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">In Progress</div>  <div class="kpi-value amber" id="s-inprogress">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Overdue</div>      <div class="kpi-value red"   id="s-overdue">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Due This Week</div><div class="kpi-value amber" id="s-duesoon">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Completed</div>    <div class="kpi-value green" id="s-completed">—</div></div>
+            <div class="kpi-card"><div class="kpi-label">Cost YTD (₹)</div><div class="kpi-value blue"  id="s-cost">—</div></div>
+        </div>
+
+        <div class="toolbar">
+            <div class="search-wrap">
+                <i class="ri-search-line"></i>
+                <input class="search-input" id="maintSearch" placeholder="Vehicle, vendor, description…" oninput="filterRecords()" />
+            </div>
+            <button class="filter-btn active" onclick="setStatusFilter('all',this)">All</button>
+            <button class="filter-btn" onclick="setStatusFilter('scheduled',this)">Scheduled</button>
+            <button class="filter-btn" onclick="setStatusFilter('in_progress',this)">In Progress</button>
+            <button class="filter-btn" onclick="setStatusFilter('overdue',this)">Overdue</button>
+            <button class="filter-btn" onclick="setStatusFilter('completed',this)">Completed</button>
+            <div style="border-left:1px solid var(--border);height:24px;margin:0 4px;"></div>
+            <select class="filter-btn" id="typeFilter" onchange="filterRecords()" style="padding:0 12px;cursor:pointer;">
+                <option value="">All Types</option>
+                <option value="routine">Routine</option>
+                <option value="repair">Repair</option>
+                <option value="inspection">Inspection</option>
+                <option value="breakdown">Breakdown</option>
+                <option value="tyre">Tyre</option>
+                <option value="battery">Battery</option>
+                <option value="other">Other</option>
+            </select>
+            <div style="flex:1;"></div>
+            <button class="btn-primary" onclick="openMaintModal()"><i class="ri-add-line"></i> Add Record</button>
+        </div>
+
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Service Date</th>
+                        <th>Next Service</th>
+                        <th>Vendor</th>
+                        <th>Cost (₹)</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="maintTbody">
+                    <tr class="loading-row"><td colspan="9"><i class="ri-loader-4-line"></i> Loading…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const API = '/api';
+let allRecords   = [];
+let statusFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', async () => {
+    TruFleetRBAC.init('maintenance');
+
+    const user = JSON.parse(localStorage.getItem('trufleet_user') || '{}');
+    if (user?.name) {
+        document.getElementById('userAvatar').textContent =
+            user.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    }
+
+    // set today's date as default
+    document.getElementById('m_service_date').value = new Date().toISOString().split('T')[0];
+
+    await Promise.all([loadStats(), loadRecords()]);
+});
+
+async function loadStats() {
+    try {
+        const s = await (await fetch(`${API}/maintenance/stats`)).json();
+        document.getElementById('s-scheduled').textContent  = s.scheduled   ?? 0;
+        document.getElementById('s-inprogress').textContent = s.in_progress ?? 0;
+        document.getElementById('s-overdue').textContent    = s.overdue     ?? 0;
+        document.getElementById('s-duesoon').textContent    = s.due_soon    ?? 0;
+        document.getElementById('s-completed').textContent  = s.completed   ?? 0;
+        const cost = s.total_cost_ytd || 0;
+        document.getElementById('s-cost').textContent = cost >= 100000
+            ? '₹' + (cost/100000).toFixed(1) + 'L'
+            : '₹' + cost.toLocaleString('en-IN');
+    } catch(e) { console.error(e); }
+}
+
+async function loadRecords() {
+    try {
+        allRecords = await (await fetch(`${API}/maintenance`)).json();
+        renderRecords();
+    } catch(e) {
+        document.getElementById('maintTbody').innerHTML =
+            `<tr class="loading-row"><td colspan="9">Failed to load records</td></tr>`;
+    }
+}
+
+function setStatusFilter(f, btn) {
+    statusFilter = f;
+    document.querySelectorAll('.toolbar .filter-btn:not(select)').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filterRecords();
+}
+
+function filterRecords() { renderRecords(); }
+
+const TYPE_META = {
+    routine:    { icon:'ri-settings-3-line',  color:'#3B82F6' },
+    repair:     { icon:'ri-hammer-line',       color:'#EF4444' },
+    inspection: { icon:'ri-eye-line',          color:'#8B5CF6' },
+    breakdown:  { icon:'ri-alert-line',        color:'#EF4444' },
+    tyre:       { icon:'ri-tire-line',         color:'#F59E0B' },
+    battery:    { icon:'ri-battery-charge-line', color:'#10B981' },
+    other:      { icon:'ri-more-line',         color:'#64748B' },
+};
+
+function renderRecords() {
+    const q    = (document.getElementById('maintSearch').value || '').toLowerCase();
+    const type = document.getElementById('typeFilter').value;
+    const today = new Date().toISOString().split('T')[0];
+
+    let list = allRecords;
+    if (statusFilter === 'overdue') {
+        list = list.filter(r => r.status === 'scheduled' && r.service_date < today);
+    } else if (statusFilter !== 'all') {
+        list = list.filter(r => r.status === statusFilter);
+    }
+    if (type) list = list.filter(r => r.maintenance_type === type);
+    if (q)    list = list.filter(r =>
+        (r.vehicle_id||'').toLowerCase().includes(q) ||
+        (r.description||'').toLowerCase().includes(q) ||
+        (r.vendor_name||'').toLowerCase().includes(q)
+    );
+
+    const tbody = document.getElementById('maintTbody');
+    if (!list.length) {
+        tbody.innerHTML = `<tr class="loading-row"><td colspan="9">No records found</td></tr>`;
+        return;
+    }
+
+    tbody.innerHTML = list.map(r => {
+        const meta     = TYPE_META[r.maintenance_type] || TYPE_META.other;
+        const isOverdue = r.status === 'scheduled' && r.service_date < today;
+        const badgeClass = isOverdue ? 'overdue' : r.status;
+        const badgeLabel = isOverdue ? 'Overdue' : capitalize(r.status.replace('_', ' '));
+        const cost = r.cost ? '₹' + parseFloat(r.cost).toLocaleString('en-IN') : '—';
+
+        // next service coloring
+        let nextHtml = r.next_service_date || '—';
+        if (r.next_service_date && r.status !== 'completed') {
+            const daysLeft = Math.ceil((new Date(r.next_service_date) - new Date()) / 86400000);
+            const color = daysLeft < 0 ? 'var(--accent-red)' : daysLeft <= 7 ? 'var(--accent-amber)' : 'inherit';
+            nextHtml = `<span style="color:${color};">${r.next_service_date}${daysLeft<=7?` <small>(${daysLeft<0?'overdue':daysLeft+'d'})</small>`:''}</span>`;
+        }
+
+        return `<tr>
+            <td><span class="mono">${r.vehicle_id}</span></td>
+            <td>
+                <span class="type-icon">
+                    <i class="${meta.icon}" style="color:${meta.color};"></i>
+                    ${capitalize(r.maintenance_type)}
+                </span>
+            </td>
+            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.description}</td>
+            <td class="mono">${r.service_date}</td>
+            <td>${nextHtml}</td>
+            <td style="color:var(--text-secondary);">${r.vendor_name||'—'}</td>
+            <td style="font-weight:600;">${cost}</td>
+            <td><span class="tag ${badgeClass}">${badgeLabel}</span></td>
+            <td>
+                ${r.status === 'scheduled'   ? `<button class="icon-btn" title="Mark In Progress" onclick="changeStatus('${r.id}','in_progress')"><i class="ri-play-circle-line"></i></button>` : ''}
+                ${r.status === 'in_progress' ? `<button class="icon-btn" title="Mark Completed"   onclick="changeStatus('${r.id}','completed')"><i class="ri-checkbox-circle-line"></i></button>` : ''}
+                <button class="icon-btn" title="Edit"   onclick="openEditor('${r.id}')"><i class="ri-edit-line"></i></button>
+                <button class="icon-btn" title="Delete" onclick="deleteRecord('${r.id}')"><i class="ri-delete-bin-line"></i></button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+/* ── Modal ── */
+let editingId = null;
+function openMaintModal(vid) {
+    editingId = null;
+    document.getElementById('maintModalTitle').textContent = 'Add Maintenance Record';
+    document.getElementById('maintForm').reset();
+    document.getElementById('m_service_date').value = new Date().toISOString().split('T')[0];
+    if (vid) document.getElementById('m_vehicle').value = vid;
+    document.getElementById('maintModal').classList.add('open');
+}
+function openEditor(id) {
+    const r = allRecords.find(x => x.id === id);
+    if (!r) return;
+    editingId = id;
+    document.getElementById('maintModalTitle').textContent = 'Edit Record';
+    document.getElementById('m_vehicle').value       = r.vehicle_id || '';
+    document.getElementById('m_type').value          = r.maintenance_type || 'routine';
+    document.getElementById('m_status').value        = r.status || 'scheduled';
+    document.getElementById('m_desc').value          = r.description || '';
+    document.getElementById('m_service_date').value  = r.service_date || '';
+    document.getElementById('m_next_date').value     = r.next_service_date || '';
+    document.getElementById('m_km').value            = r.current_km || '';
+    document.getElementById('m_next_km').value       = r.next_service_km || '';
+    document.getElementById('m_vendor').value        = r.vendor_name || '';
+    document.getElementById('m_vendor_phone').value  = r.vendor_phone || '';
+    document.getElementById('m_cost').value          = r.cost || '';
+    document.getElementById('m_notes').value         = r.notes || '';
+    document.getElementById('maintModal').classList.add('open');
+}
+function closeMaintModal() {
+    document.getElementById('maintModal').classList.remove('open');
+    editingId = null;
+}
+document.getElementById('maintForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const body = {
+        vehicle_id:        document.getElementById('m_vehicle').value.trim().toUpperCase(),
+        maintenance_type:  document.getElementById('m_type').value,
+        status:            document.getElementById('m_status').value,
+        description:       document.getElementById('m_desc').value.trim(),
+        service_date:      document.getElementById('m_service_date').value,
+        next_service_date: document.getElementById('m_next_date').value || null,
+        current_km:        parseInt(document.getElementById('m_km').value) || null,
+        next_service_km:   parseInt(document.getElementById('m_next_km').value) || null,
+        vendor_name:       document.getElementById('m_vendor').value.trim() || null,
+        vendor_phone:      document.getElementById('m_vendor_phone').value.trim() || null,
+        cost:              parseFloat(document.getElementById('m_cost').value) || 0,
+        notes:             document.getElementById('m_notes').value.trim() || null,
+    };
+    const url    = editingId ? `${API}/maintenance/${editingId}` : `${API}/maintenance`;
+    const method = editingId ? 'PATCH' : 'POST';
+    try {
+        const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+        if (!res.ok) throw new Error((await res.json()).error || 'Save failed');
+        closeMaintModal();
+        await Promise.all([loadStats(), loadRecords()]);
+    } catch(err) { alert(err.message); }
+});
+
+async function changeStatus(id, status) {
+    try {
+        const res = await fetch(`${API}/maintenance/${id}/status`, {
+            method:'PATCH', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ status }),
+        });
+        if (!res.ok) throw new Error('Status update failed');
+        await Promise.all([loadStats(), loadRecords()]);
+    } catch(e) { alert(e.message); }
+}
+async function deleteRecord(id) {
+    if (!confirm('Delete this maintenance record?')) return;
+    try {
+        await fetch(`${API}/maintenance/${id}`, { method:'DELETE' });
+        await Promise.all([loadStats(), loadRecords()]);
+    } catch(e) { alert(e.message); }
+}
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+</script>
+</body>
+</html>
